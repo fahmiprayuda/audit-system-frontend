@@ -10,8 +10,9 @@ export default function NavbarTesla() {
 
   const menu = [
     { name: "Home", id: "home" },
-    { name: "Menu", id: "menu" },
+    { name: "Trust", id: "trust" },
     { name: "About", id: "about" },
+    { name: "Menu", id: "menu" },
     { name: "Gallery", id: "gallery" },
     { name: "Contact", id: "contact" },
   ];

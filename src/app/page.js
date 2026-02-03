@@ -17,8 +17,8 @@ export default function Home() {
       <HeroApple />
       <Trust />
       <About />
-      <Gallery />
       <Menu/>
+      <Gallery />
       <Contact/>
       <Footer />
     </>

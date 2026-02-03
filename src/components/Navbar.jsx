@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 
 const menus = [
   { name: "Home", id: "home" },
-  { name: "Menu", id: "menu" },
   { name: "Trust", id: "trust" },
+  { name: "About", id: "about" },
+  { name: "Menu", id: "menu" },
   { name: "Gallery", id: "gallery" },
   { name: "Contact", id: "contact" },
 ];
