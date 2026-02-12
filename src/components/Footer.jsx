@@ -1,14 +1,65 @@
+import { FaInstagram, FaFacebookF, FaTelegramPlane } from "react-icons/fa";
+
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 text-gray-300 py-10">
-      <div className="max-w-7xl mx-auto px-6 text-center">
-        <h2 className="text-xl font-bold text-white mb-3">Smoky Coffee</h2>
+    <footer className="bg-black text-gray-400">
+      <div className="max-w-7xl mx-auto px-6 py-14">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* BRAND */}
+          <h2 className="text-white font-semibold tracking-wide">RS Al-Arif</h2>
 
-        <p className="text-sm mb-4">
-          © {new Date().getFullYear()} Smoky Coffee Indonesia
-        </p>
+          {/* SOCIAL MEDIA */}
+          <div className="flex items-center gap-4">
+            <a
+              href="https://instagram.com/rsalarif"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+      p-2 rounded-full
+      bg-white/5
+      hover:bg-white/10
+      transition
+    "
+              title="Instagram"
+            >
+              <FaInstagram className="w-5 h-5 hover:text-white" />
+            </a>
 
-        <p className="text-sm">All rights reserved.</p>
+            <a
+              href="https://facebook.com/rsalarif"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+      p-2 rounded-full
+      bg-white/5
+      hover:bg-white/10
+      transition
+    "
+              title="Facebook"
+            >
+              <FaFacebookF className="w-5 h-5 hover:text-white" />
+            </a>
+
+            <a
+              href="https://t.me/rsalarif"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="
+      p-2 rounded-full
+      bg-white/5
+      hover:bg-white/10
+      transition
+    "
+              title="Telegram"
+            >
+              <FaTelegramPlane className="w-5 h-5 hover:text-white" />
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-10 text-center text-xs text-gray-500">
+          © {new Date().getFullYear()} RS Al-Arif. All rights reserved.
+        </div>
       </div>
     </footer>
   );

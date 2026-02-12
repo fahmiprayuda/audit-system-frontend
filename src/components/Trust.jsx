@@ -7,7 +7,7 @@ export default function Trust() {
   const data = [
     {
       icon: <Factory size={36} />,
-      title: "10+ Tahun Pengalaman",
+      title: "20+ Tahun Pengalaman",
       desc: "Berpengalaman dalam industri kopi dan manufaktur.",
     },
     {
@@ -22,8 +22,8 @@ export default function Trust() {
     },
     {
       icon: <Globe size={36} />,
-      title: "Distribusi Nasional",
-      desc: "Melayani pengiriman ke seluruh Indonesia.",
+      title: "BPJS",
+      desc: "Melayani pasien dengan program BPJS.",
     },
   ];
 
@@ -43,8 +43,9 @@ export default function Trust() {
           </h2>
 
           <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Kami berkomitmen memberikan produk terbaik dengan standar kualitas
-            tinggi dan pelayanan profesional.
+            Kami memiliki pengalaman lebih dari 20 tahun dalam memberikan
+            pelayanan kesehatan berkualitas tinggi. Anda dapat mempercayakan
+            kesehatan Anda kepada tim profesional kami yang berdedikasi.
           </p>
         </motion.div>
 
@@ -55,7 +56,10 @@ export default function Trust() {
               key={i}
               initial={{ opacity: 0, filter: "blur(10px)" }}
               whileInView={{ opacity: 1, filter: "blur(0px)" }}
-              transition={{ duration: 0.8, delay: i * 0.5 }}
+              transition={{
+                duration: 0.8,
+                delay: i * 0.3,
+              }}
               viewport={{ once: true }}
               className="group bg-white dark:bg-gray-800 rounded-2xl p-6 text-center shadow-md hover:shadow-xl transition"
             >

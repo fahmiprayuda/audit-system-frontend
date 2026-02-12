@@ -2,20 +2,26 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
+/* ================= MENU CONFIG ================= */
 const menu = [
-  { name: "Home", id: "home" },
-  { name: "Trust", id: "trust" },
-  { name: "About", id: "about" },
-  { name: "Menu", id: "menu" },
-  { name: "Gallery", id: "gallery" },
-  { name: "Contact", id: "contact" },
+  { name: "Home", id: "home", href: "/#home" },
+  { name: "About", id: "about", href: "/#about" },
+  { name: "Why Us", id: "trust", href: "/#trust" },
+  { name: "Service", id: "service", href: "/#service" },
+  { name: "Doctors", id: "doctors", href: "/#doctors" },
+  { name: "Portfolio", id: "portfolio", href: "/#portfolio" },
+  { name: "Contact", id: "contact", href: "/#contact" },
 ];
 
 export default function NavbarTesla() {
+  const pathname = usePathname();
+
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [active, setActive] = useState("home");
+  const [active, setActive] = useState(null);
 
   /* ================= SCROLL BG ================= */
   useEffect(() => {
@@ -27,8 +33,10 @@ export default function NavbarTesla() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  /* ================= ACTIVE MENU ================= */
+  /* ================= ACTIVE MENU (HOMEPAGE ONLY) ================= */
   useEffect(() => {
+    if (pathname !== "/") return;
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -37,9 +45,7 @@ export default function NavbarTesla() {
           }
         });
       },
-      {
-        threshold: 0.6,
-      },
+      { threshold: 0.6 },
     );
 
     menu.forEach((item) => {
@@ -48,7 +54,7 @@ export default function NavbarTesla() {
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [pathname]);
 
   return (
     <>
@@ -66,41 +72,39 @@ export default function NavbarTesla() {
       >
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           {/* LOGO */}
-          <a
-            href="#home"
-            className="text-xl font-semibold tracking-wide text-black dark:text-white"
+          <Link
+            href="/#home"
+            className="text-lg font-semibold tracking-wide text-black dark:text-white"
           >
-            SMOKY
-          </a>
+            RS Al-Arif Ciamis
+          </Link>
 
-          {/* ================= DESKTOP ================= */}
+          {/* ================= DESKTOP MENU ================= */}
           <nav className="hidden md:flex gap-8 text-sm font-medium">
-            {menu.map((item) => (
-              <a
-                key={item.name}
-                href={`#${item.id}`}
-                className={`
-                  relative pb-1 transition
-                  ${
-                    active === item.id
+            {menu.map((item) => {
+              const isActive = pathname === "/" && active === item.id;
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`relative pb-1 transition ${
+                    isActive
                       ? "text-black dark:text-white"
                       : "text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
-                  }
-                `}
-              >
-                {item.name}
+                  }`}
+                >
+                  {item.name}
 
-                {/* ACTIVE LINE */}
-                <span
-                  className={`
-                    absolute left-0 -bottom-1 h-[2px]
-                    bg-black dark:bg-white
-                    transition-all duration-300
-                    ${active === item.id ? "w-full" : "w-0 group-hover:w-full"}
-                  `}
-                />
-              </a>
-            ))}
+                  {/* ACTIVE LINE */}
+                  <span
+                    className={`absolute left-0 -bottom-1 h-[2px]
+                    bg-black dark:bg-white transition-all duration-300
+                    ${isActive ? "w-full" : "w-0"}`}
+                  />
+                </Link>
+              );
+            })}
           </nav>
 
           {/* ================= HAMBURGER ================= */}
@@ -115,7 +119,7 @@ export default function NavbarTesla() {
         </div>
       </header>
 
-      {/* ================= MOBILE ================= */}
+      {/* ================= MOBILE MENU ================= */}
       <AnimatePresence>
         {open && (
           <>
@@ -150,21 +154,14 @@ export default function NavbarTesla() {
 
               <nav className="space-y-6 text-lg font-medium">
                 {menu.map((item) => (
-                  <a
+                  <Link
                     key={item.name}
-                    href={`#${item.id}`}
+                    href={item.href}
                     onClick={() => setOpen(false)}
-                    className={`
-                      block transition
-                      ${
-                        active === item.id
-                          ? "text-black dark:text-white font-semibold"
-                          : "text-gray-600 dark:text-gray-300 hover:text-black dark:hover:text-white"
-                      }
-                    `}
+                    className="block text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white transition"
                   >
                     {item.name}
-                  </a>
+                  </Link>
                 ))}
               </nav>
             </motion.div>

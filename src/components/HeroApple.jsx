@@ -23,7 +23,7 @@ export default function Hero() {
       {/* Background Image */}
       <motion.div style={{ scale }} className="absolute inset-0">
         <Image
-          src="/images/hero.jpg" // GANTI GAMBAR LO
+          src="/images/hero/rs.jpg" // GANTI GAMBAR LO
           fill
           priority
           className="object-cover"
@@ -48,24 +48,28 @@ export default function Hero() {
           px-6
         "
       >
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">Smoky Coffee</h1>
+        <h1 className="text-4xl md:text-6xl font-bold mb-4">
+          Rumah Sakit Umum
+        </h1>
 
         <p className="max-w-xl text-lg md:text-xl text-white/90">
-          Racikan kopi terbaik dengan cita rasa premium
+          Rumah Sakit Umum Penyedia Layanan Kesehatan Terpercaya dengan
+          Pelayanan Prima dan Fasilitas Modern untuk Kesejahteraan Anda.
         </p>
 
-        <button
+        <a
+          href="#service"
           className="
             mt-8 px-8 py-3
-            bg-white text-black
+            bg-blue-600 text-white
             rounded-full
             font-semibold
-            hover:bg-gray-200
+            hover:bg-gray-200 hover:text-blue-600
             transition
           "
         >
-          Lihat Menu
-        </button>
+          Lihat Layanan Kami
+        </a>
       </motion.div>
     </section>
   );

@@ -27,38 +27,46 @@ export default function Gallery() {
   const slides = [
     {
       type: "image",
-      src: "/gallery/1.jpg",
+      src: "/gallery/kegiatan1.jpg",
       title: "Produk Unggulan",
     },
     {
-      type: "video",
-      src: "/videos/produksi.mp4",
-      poster: "/gallery/thumb1.jpg",
+      type: "image",
+      src: "/gallery/kegiatan2.jpg",
       title: "Proses Produksi",
     },
 
     {
       type: "image",
-      src: "/gallery/2.jpg",
+      src: "/gallery/kegiatan3.jpg",
       title: "Pabrik Produksi",
     },
     {
-      type: "video",
-      src: "/videos/bts.mp4",
-      poster: "/gallery/thumb2.jpg",
+      type: "image",
+      src: "/gallery/kegiatan4.jpg",
       title: "Behind The Scene",
     },
 
     {
       type: "image",
-      src: "/gallery/3.jpg",
+      src: "/gallery/kegiatan5.jpg",
+      title: "Tim Profesional",
+    },
+    {
+      type: "image",
+      src: "/gallery/kegiatan6.jpg",
+      title: "Kolaborasi",
+    },
+    {
+      type: "image",
+      src: "/gallery/kegiatan7.jpg",
       title: "Tim Profesional",
     },
   ];
 
   return (
     <section
-      id="gallery"
+      id="portfolio"
       className="py-24 bg-gray-50 dark:bg-gray-900 overflow-hidden"
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -75,7 +83,8 @@ export default function Gallery() {
           </h2>
 
           <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Dokumentasi kegiatan, produk, dan proses produksi perusahaan kami.
+            Dokumentasi kegiatan rumah sakit umum Al-Arif dalam melayani
+            masyarakat.
           </p>
         </motion.div>
 
@@ -99,8 +108,10 @@ export default function Gallery() {
             spaceBetween={24}
             slidesPerView={1}
             breakpoints={{
-              640: { slidesPerView: 2 },
-              1024: { slidesPerView: 3 },
+              480: { slidesPerView: 2 },
+              640: { slidesPerView: 3 },
+              768: { slidesPerView: 4 },
+              1024: { slidesPerView: 5 },
             }}
             className="pb-14"
           >
@@ -112,7 +123,7 @@ export default function Gallery() {
                     setOpen(true);
                   }}
                   className="
-                    relative w-full h-[300px]
+                    relative w-full h-[220px]
                     rounded-2xl overflow-hidden
                     shadow-xl cursor-pointer
                     group bg-black

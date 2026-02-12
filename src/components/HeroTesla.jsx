@@ -38,7 +38,7 @@ function TeslaSlide({ slide, index, total, progress }) {
   );
 
   return (
-    <motion.div style={{ opacity }} className="absolute inset-0">
+    <motion.div id="home" style={{ opacity }} className="absolute inset-0">
       {/* BG */}
       <Image
         src={slide.image}

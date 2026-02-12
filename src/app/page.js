@@ -1,26 +1,30 @@
 import Navbar from "@/components/Navbar";
 import NavbarTesla from "@/components/NavbarTesla";
 import Footer from "@/components/Footer";
+import {CTASection} from "@/components/CTASection";
 import About from "@/components/About";
-import Menu from "@/components/Menu";
+import Service from "@/components/Service";
 import Contact from "@/components/Contact";
 import Trust from "@/components/Trust";
-import Gallery from "@/components/Gallery";
+import Portfolio from "@/components/Portfolio";
 import HeroApple from "@/components/HeroApple";
 import HeroTesla from "@/components/HeroTesla";
 import HeroNike from "@/components/HeroNike";
+import StickyWhatsApp from "@/components/StickyWhatsApp";
+import DoctorsPreview from "@/components/DoctorsPreview";
 
 export default function Home() {
   return (
     <>
-      <NavbarTesla />
       <HeroApple />
-      <Trust />
       <About />
-      <Menu/>
-      <Gallery />
+      <Trust />
+      <Service />
+      <DoctorsPreview />
+      <Portfolio />
       <Contact/>
-      <Footer />
+      <CTASection />
+      <StickyWhatsApp />
     </>
   );
 }
