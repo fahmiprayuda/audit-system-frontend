@@ -1,5 +1,7 @@
 import "./globals.css";
 import { Montserrat_Alternates, KoHo } from "next/font/google";
+import Topbar from "@/components/layout/Topbar";
+import Sidebar from "@/components/layout/Sidebar";
 
 const heading = Montserrat_Alternates({
   subsets: ["latin"],
@@ -22,7 +24,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${heading.variable} ${body.variable}`}>
       <body className="font-body bg-white text-gray-900">
+        <Topbar />
+        <div className="flex">
+          <Sidebar />
+          <main className="flex-1 p-6">   
         {children}
+          </main>
+        </div>
       </body>
     </html>
   );
