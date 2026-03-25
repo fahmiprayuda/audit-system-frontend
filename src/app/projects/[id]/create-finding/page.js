@@ -43,6 +43,8 @@ export default function CreateFindingPage() {
   // TOGGLE DEPARTMENT
   // ===============================
   const toggleDepartment = (deptId) => {
+    deptId = String(deptId);
+
     if (selectedDepartments.includes(deptId)) {
       setSelectedDepartments(
         selectedDepartments.filter((id) => id !== deptId)
@@ -78,7 +80,7 @@ export default function CreateFindingPage() {
         description,
         risk_rating: risk,
         due_date: dueDate,
-        departments: selectedDepartments,
+        departments: selectedDepartments.map(Number),
       });
 
       console.log("CREATE FINDING RESPONSE:", res.data);
@@ -91,7 +93,7 @@ export default function CreateFindingPage() {
       }
 
       // 🔥 redirect ke action plan page
-      router.push(`/findings/${newFinding.id}/action-plans`);
+      router.push(`/projects/${id}`);
 
     } catch (err) {
 
@@ -185,21 +187,30 @@ export default function CreateFindingPage() {
               Loading departments...
             </p>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
-              {departments.map((dept) => (
-                <label
-                  key={dept.id}
-                  className="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedDepartments.includes(dept.id)}
-                    onChange={() => toggleDepartment(dept.id)}
-                  />
-                  {dept.name}
-                </label>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {(departments || []).map((dept) => (
+                  <label
+                    key={dept.id}
+                    className="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedDepartments.includes(String(dept.id))}
+                      onChange={() => toggleDepartment(dept.id)}
+                    />
+                    {dept.name}
+                  </label>
+                ))}
+              </div>
+
+              {/* 🔥 INI TARUH DI SINI */}
+              {selectedDepartments.length > 0 && (
+                <div className="mt-2 text-sm text-blue-600">
+                  Selected: {selectedDepartments.length} department(s)
+                </div>
+              )}
+            </>
           )}
         </div>
 

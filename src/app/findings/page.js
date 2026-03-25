@@ -56,7 +56,7 @@ export default function FindingsPage() {
           }
         });
 
-        setFindings(res.data.data);
+        setFindings(res?.data?.data || []);
         setPagination(res.data);
 
       } catch (err) {
@@ -225,7 +225,7 @@ export default function FindingsPage() {
                         key={i}
                         className="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs"
                       >
-                        {dept}
+                        {dept.department_name}
                       </span>
                     ))
                   ) : (

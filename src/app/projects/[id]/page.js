@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/axios";
 
 export default function ProjectPage() {
-
   const { id } = useParams();
   const router = useRouter();
 
@@ -23,15 +22,15 @@ export default function ProjectPage() {
 
   // ================= FETCH =================
   useEffect(() => {
-
     const fetchData = async () => {
       try {
-        const res = await api.get(`/projects/${id}`);
-        const dept = await api.get("/departments");
+        const [res, dept] = await Promise.all([
+          api.get(`/projects/${id}`),
+          api.get("/departments")
+        ]);
 
-        setData(res.data);
-        setDepartments(dept.data);
-
+        setData(res?.data || null);
+        setDepartments(dept?.data || []);
       } catch (err) {
         console.error(err);
         alert("Failed to load project");
@@ -39,37 +38,35 @@ export default function ProjectPage() {
     };
 
     if (id) fetchData();
-
   }, [id]);
 
   if (!data) return <p className="p-10">Loading...</p>;
 
-  const { project, findings } = data;
+  // ================= NORMALIZE =================
+  const project = data.project;
+
+  const findings = Array.isArray(data?.findings) ? data.findings : [];
+
+  const findingsData = findings;
 
   // ================= DELETE FINDING =================
   const deleteFinding = async (findingId) => {
-
     if (!confirm("Delete this finding?")) return;
 
     try {
       await api.delete(`/findings/${findingId}`);
 
-      const updatedFindings = findings.filter(f => f.id !== findingId);
-
-      setData({
-        ...data,
-        findings: updatedFindings
-      });
-
+      setData(prev => ({
+        ...prev,
+        findings: prev.findings.filter(f => f.id !== findingId)
+      }));
     } catch (err) {
       alert(err.response?.data?.message || "Failed to delete finding");
     }
-
   };
 
   // ================= DELETE PROJECT =================
   const deleteProject = async () => {
-
     if (!confirm("Delete this project?")) return;
 
     try {
@@ -78,26 +75,28 @@ export default function ProjectPage() {
     } catch (err) {
       alert(err.response?.data?.message || "Cannot delete project");
     }
-
   };
 
   // ================= SUBMIT ACTION PLAN =================
   const submitAP = async () => {
-
     if (!form.finding_id || !form.department_id) {
       return alert("Finding & Department wajib diisi");
     }
 
     try {
+      const selectedFinding = findingsData.find(
+        f => String(f.id) === String(form.finding_id)
+      );
+
+      let existing = null;
+
+      if (selectedFinding) {
+        existing = selectedFinding.departments?.find(
+          d => String(d.department_id) === String(form.department_id)
+        );
+      }
 
       let fdId;
-
-      // =========================
-      // CHECK EXISTING FD
-      // =========================
-      const existing = findings
-        .find(f => f.id == form.finding_id)
-        ?.departments?.find(d => d.department_id == form.department_id);
 
       if (existing) {
         fdId = existing.finding_department_id;
@@ -107,12 +106,9 @@ export default function ProjectPage() {
           department_id: form.department_id
         });
 
-        fdId = fd.data.id;
+        fdId = fd?.data?.id;
       }
 
-      // =========================
-      // CREATE ACTION PLAN (ONLY ONCE)
-      // =========================
       await api.post("/action-plans", {
         finding_department_id: fdId,
         root_cause: form.root_cause,
@@ -139,11 +135,10 @@ export default function ProjectPage() {
     }
   };
 
-  // ================= SUMMARY (FIXED) =================
+  // ================= SUMMARY =================
+  const totalFindings = findingsData.length;
 
-  const totalFindings = findings.length;
-
-  const allDepartments = findings.flatMap(f => f.departments || []);
+  const allDepartments = findingsData.flatMap(f => f.departments || []);
   const totalDepartments = allDepartments.length;
 
   const allAP = allDepartments.flatMap(d => d.action_plans || []);
@@ -158,7 +153,6 @@ export default function ProjectPage() {
 
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-
         <h1 className="text-3xl font-bold">
           {project.project_name}
         </h1>
@@ -169,21 +163,14 @@ export default function ProjectPage() {
         >
           Delete Project
         </button>
-
       </div>
 
       {/* ACTION BAR */}
       <div className="flex gap-3 mb-6">
 
         <button
-          onClick={() => {
-            if (window.history.length > 1) {
-              router.back();
-            } else {
-              router.push("/projects");
-            }
-          }}
-          className="bg-yellow-400 px-4 py-2 rounded flex items-center gap-2 text-sm text-gray-600 hover:text-black"
+          onClick={() => router.back()}
+          className="bg-yellow-400 px-4 py-2 rounded"
         >
           ← Back
         </button>
@@ -206,21 +193,17 @@ export default function ProjectPage() {
 
       {/* SUMMARY */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-
         <Card title="Findings" value={totalFindings} />
         <Card title="Departments" value={totalDepartments} />
         <Card title="Action Plans" value={totalAP} />
         <Card title="Open AP" value={openAP} />
         <Card title="Review AP" value={reviewAP} />
         <Card title="Completed AP" value={completedAP} />
-
       </div>
 
       {/* TABLE */}
       <div className="bg-white rounded-xl shadow overflow-x-auto">
-
         <table className="w-full text-left">
-
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="p-4">Code</th>
@@ -234,8 +217,7 @@ export default function ProjectPage() {
           </thead>
 
           <tbody>
-
-            {findings.flatMap((finding) => {
+            {findingsData.flatMap((finding) => {
 
               const depts = finding.departments?.length
                 ? finding.departments
@@ -244,6 +226,25 @@ export default function ProjectPage() {
               return depts.map((dept, idx) => {
 
                 const fdId = dept.finding_department_id;
+
+                const updateStatus = async (id, status) => {
+                  try {
+                    await api.put(`/findings/${id}`, {
+                      status
+                    });
+
+                    setData(prev => ({
+                      ...prev,
+                      findings: prev.findings.map(f =>
+                        f.id === id ? { ...f, status } : f
+                      )
+                    }));
+
+                  } catch (err) {
+                    console.error(err);
+                    alert("Failed update status");
+                  }
+                };
 
                 return (
                   <tr
@@ -273,14 +274,40 @@ export default function ProjectPage() {
                     </td>
 
                     <td className="p-4">
-                      <StatusBadge status={finding.status} />
+                      <select
+                        value={finding.status}
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => updateStatus(finding.id, e.target.value)}
+                        className={`px-2 py-1 rounded text-white text-xs ${finding.status === "open"
+                            ? "bg-red-500"
+                            : finding.status === "need_review"
+                              ? "bg-yellow-500"
+                              : finding.status === "completed"
+                                ? "bg-blue-600"
+                                : "bg-green-600"
+                          }`}
+                      >
+                        <option value="open">Open</option>
+                        <option value="need_review">Need Review</option>
+                        <option value="closed">Closed</option>
+                      </select>
                     </td>
 
                     <td className="p-4">
                       {formatDate(finding.due_date)}
                     </td>
 
-                    <td className="p-4">
+                    <td className="p-4 gap-2 flex">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/findings/${finding.id}/edit`);
+                        }}
+                        className="text-blue-600 text-sm"
+                      >
+                        Edit
+                      </button>
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -296,17 +323,13 @@ export default function ProjectPage() {
                 );
               });
             })}
-
           </tbody>
-
         </table>
-
       </div>
 
       {/* MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
           <div className="bg-white p-6 rounded-xl w-[500px] space-y-4">
 
             <h2 className="text-xl font-bold">Add Action Plan</h2>
@@ -317,7 +340,7 @@ export default function ProjectPage() {
               className="w-full border p-2 rounded"
             >
               <option value="">Select Finding</option>
-              {findings.map(f => (
+              {findingsData.map(f => (
                 <option key={f.id} value={f.id}>
                   {f.finding_code} - {f.title}
                 </option>
@@ -369,7 +392,6 @@ export default function ProjectPage() {
             </div>
 
           </div>
-
         </div>
       )}
 
@@ -377,7 +399,7 @@ export default function ProjectPage() {
   );
 }
 
-/* CARD */
+/* COMPONENTS */
 function Card({ title, value }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow">
@@ -387,11 +409,11 @@ function Card({ title, value }) {
   );
 }
 
-/* STATUS */
 function StatusBadge({ status }) {
   const map = {
     open: "bg-red-500",
     need_review: "bg-yellow-500",
+    completed: "bg-blue-600",
     closed: "bg-green-600"
   };
 
@@ -402,7 +424,6 @@ function StatusBadge({ status }) {
   );
 }
 
-/* DATE */
 function formatDate(date) {
   if (!date) return "-";
 
