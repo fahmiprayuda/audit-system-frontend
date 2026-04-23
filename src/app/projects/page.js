@@ -103,7 +103,10 @@ export default function ProjectsPage() {
 
               <tr
                 key={project.id}
-                onClick={() => router.push(`/projects/${project.id}`)}
+                onClick={(e) => {
+                  if (e.target.tagName === "BUTTON") return;
+                  router.push(`/projects/${project.id}`);
+                }}
                 className="border-b hover:bg-gray-50 cursor-pointer"
               >
 
@@ -170,15 +173,19 @@ export default function ProjectsPage() {
 
 function StatusBadge({ status }) {
 
-  let color = "bg-gray-400";
+  const map = {
+    open: "bg-blue-500",
+    in_progress: "bg-yellow-500",
+    pending_verify: "bg-orange-500",
+    review: "bg-purple-500",
+    closed: "bg-green-600",
+  };
 
-  if (status === "open") color = "bg-blue-500";
-  if (status === "in_progress") color = "bg-yellow-500";
-  if (status === "closed") color = "bg-green-600";
+  const color = map[status] || "bg-gray-400";
 
   return (
     <span className={`px-3 py-1 rounded-full text-white text-xs ${color}`}>
-      {status}
+      {status.replaceAll("_", " ")}
     </span>
   );
 }

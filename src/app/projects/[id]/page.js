@@ -42,30 +42,10 @@ export default function ProjectPage() {
 
   if (!data) return <p className="p-10">Loading...</p>;
 
-  // ================= NORMALIZE =================
   const project = data.project;
+  const findings = data.findings || [];
 
-  const findings = Array.isArray(data?.findings) ? data.findings : [];
-
-  const findingsData = findings;
-
-  // ================= DELETE FINDING =================
-  const deleteFinding = async (findingId) => {
-    if (!confirm("Delete this finding?")) return;
-
-    try {
-      await api.delete(`/findings/${findingId}`);
-
-      setData(prev => ({
-        ...prev,
-        findings: prev.findings.filter(f => f.id !== findingId)
-      }));
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to delete finding");
-    }
-  };
-
-  // ================= DELETE PROJECT =================
+  // ================= DELETE =================
   const deleteProject = async () => {
     if (!confirm("Delete this project?")) return;
 
@@ -77,26 +57,41 @@ export default function ProjectPage() {
     }
   };
 
-  // ================= SUBMIT ACTION PLAN =================
+  const deleteDepartment = async (fdId) => {
+    if (!confirm("Remove this department?")) return;
+
+    try {
+      await api.delete(`/finding-departments/${fdId}`);
+
+      setData(prev => ({
+        ...prev,
+        findings: prev.findings.map(f => ({
+          ...f,
+          departments: f.departments.filter(
+            d => d.finding_department_id !== fdId
+          )
+        }))
+      }));
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete");
+    }
+  };
+
+  // ================= SUBMIT AP =================
   const submitAP = async () => {
     if (!form.finding_id || !form.department_id) {
       return alert("Finding & Department wajib diisi");
     }
 
     try {
-      const selectedFinding = findingsData.find(
-        f => String(f.id) === String(form.finding_id)
-      );
-
-      let existing = null;
-
-      if (selectedFinding) {
-        existing = selectedFinding.departments?.find(
-          d => String(d.department_id) === String(form.department_id)
-        );
-      }
-
       let fdId;
+
+      const finding = findings.find(f => f.id == form.finding_id);
+      const existing = finding?.departments?.find(
+        d => d.department_id == form.department_id
+      );
 
       if (existing) {
         fdId = existing.finding_department_id;
@@ -106,7 +101,7 @@ export default function ProjectPage() {
           department_id: form.department_id
         });
 
-        fdId = fd?.data?.id;
+        fdId = fd.data.id;
       }
 
       await api.post("/action-plans", {
@@ -114,13 +109,12 @@ export default function ProjectPage() {
         root_cause: form.root_cause,
         corrective_action: form.corrective_action,
         target_date: form.target_date,
-        status: "open"
+        status: "draft" // ✅ FIX
       });
 
-      alert("Action Plan Created 🔥");
+      alert("Action Plan Created");
 
       setShowModal(false);
-
       setForm({
         finding_id: "",
         department_id: "",
@@ -131,22 +125,23 @@ export default function ProjectPage() {
 
     } catch (err) {
       console.error(err);
-      alert("Failed bro");
+      alert("Failed create AP");
     }
   };
 
   // ================= SUMMARY =================
-  const totalFindings = findingsData.length;
-
-  const allDepartments = findingsData.flatMap(f => f.departments || []);
-  const totalDepartments = allDepartments.length;
-
+  const allDepartments = findings.flatMap(f => f.departments || []);
   const allAP = allDepartments.flatMap(d => d.action_plans || []);
 
-  const totalAP = allAP.length;
-  const openAP = allAP.filter(ap => ap.status === "open").length;
-  const reviewAP = allAP.filter(ap => ap.status === "need_review").length;
-  const completedAP = allAP.filter(ap => ap.status === "completed").length;
+  const summary = {
+    findings: findings.length,
+    departments: allDepartments.length,
+    actionPlans: allAP.length,
+    draft: allAP.filter(a => a.status === "draft").length,
+    progress: allAP.filter(a => a.status === "in_progress").length,
+    done: allAP.filter(a => a.status === "done").length,
+    verified: allAP.filter(a => a.status === "verified").length,
+  };
 
   return (
     <div className="p-10 bg-gray-100 min-h-screen">
@@ -167,11 +162,7 @@ export default function ProjectPage() {
 
       {/* ACTION BAR */}
       <div className="flex gap-3 mb-6">
-
-        <button
-          onClick={() => router.back()}
-          className="bg-yellow-400 px-4 py-2 rounded"
-        >
+        <button onClick={() => router.back()} className="bg-yellow-400 px-4 py-2 rounded">
           ← Back
         </button>
 
@@ -179,26 +170,26 @@ export default function ProjectPage() {
           onClick={() => router.push(`/projects/${id}/create-finding`)}
           className="bg-blue-600 text-white px-4 py-2 rounded"
         >
-          + Add Finding
+          + Finding
         </button>
 
         <button
           onClick={() => setShowModal(true)}
           className="bg-green-600 text-white px-4 py-2 rounded"
         >
-          + Add Action Plan
+          + Action Plan
         </button>
-
       </div>
 
       {/* SUMMARY */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-        <Card title="Findings" value={totalFindings} />
-        <Card title="Departments" value={totalDepartments} />
-        <Card title="Action Plans" value={totalAP} />
-        <Card title="Open AP" value={openAP} />
-        <Card title="Review AP" value={reviewAP} />
-        <Card title="Completed AP" value={completedAP} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-8">
+        <Card title="Findings" value={summary.findings} />
+        <Card title="Departments" value={summary.departments} />
+        <Card title="AP" value={summary.actionPlans} />
+        <Card title="Draft" value={summary.draft} />
+        <Card title="Progress" value={summary.progress} />
+        <Card title="Done" value={summary.done} />
+        <Card title="Verified" value={summary.verified} />
       </div>
 
       {/* TABLE */}
@@ -211,13 +202,13 @@ export default function ProjectPage() {
               <th className="p-4">Department</th>
               <th className="p-4">Risk</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Due Date</th>
+              <th className="p-4">Due</th>
               <th className="p-4">Action</th>
             </tr>
           </thead>
 
           <tbody>
-            {findingsData.flatMap((finding) => {
+            {findings.flatMap(finding => {
 
               const depts = finding.departments?.length
                 ? finding.departments
@@ -227,77 +218,30 @@ export default function ProjectPage() {
 
                 const fdId = dept.finding_department_id;
 
-                const updateStatus = async (id, status) => {
-                  try {
-                    await api.put(`/findings/${id}`, {
-                      status
-                    });
-
-                    setData(prev => ({
-                      ...prev,
-                      findings: prev.findings.map(f =>
-                        f.id === id ? { ...f, status } : f
-                      )
-                    }));
-
-                  } catch (err) {
-                    console.error(err);
-                    alert("Failed update status");
-                  }
-                };
-
                 return (
                   <tr
                     key={`${finding.id}-${fdId || idx}`}
-                    onClick={() => {
-                      if (!fdId) {
-                        router.push(`/findings/${finding.id}`);
-                      } else {
-                        router.push(`/findings/${finding.id}?fd=${fdId}`);
-                      }
-                    }}
+                    onClick={() =>
+                      fdId
+                        ? router.push(`/findings/${finding.id}?fd=${fdId}`)
+                        : router.push(`/findings/${finding.id}`)
+                    }
                     className="border-b hover:bg-gray-50 cursor-pointer"
                   >
-
                     <td className="p-4">{finding.finding_code}</td>
-
-                    <td className="p-4 font-medium">
-                      {finding.title}
-                    </td>
-
-                    <td className="p-4">
-                      {dept.name || "-"}
-                    </td>
+                    <td className="p-4 font-medium">{finding.title}</td>
+                    <td className="p-4">{dept.name || "-"}</td>
+                    <td className="p-4">{finding.risk_rating}</td>
 
                     <td className="p-4">
-                      {finding.risk_rating}
-                    </td>
-
-                    <td className="p-4">
-                      <select
-                        value={finding.status}
-                        onClick={(e) => e.stopPropagation()}
-                        onChange={(e) => updateStatus(finding.id, e.target.value)}
-                        className={`px-2 py-1 rounded text-white text-xs ${finding.status === "open"
-                            ? "bg-red-500"
-                            : finding.status === "need_review"
-                              ? "bg-yellow-500"
-                              : finding.status === "completed"
-                                ? "bg-blue-600"
-                                : "bg-green-600"
-                          }`}
-                      >
-                        <option value="open">Open</option>
-                        <option value="need_review">Need Review</option>
-                        <option value="closed">Closed</option>
-                      </select>
+                      <StatusBadge status={dept.status} />
                     </td>
 
                     <td className="p-4">
                       {formatDate(finding.due_date)}
                     </td>
 
-                    <td className="p-4 gap-2 flex">
+                    <td className="p-4 flex gap-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -308,15 +252,17 @@ export default function ProjectPage() {
                         Edit
                       </button>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteFinding(finding.id);
-                        }}
-                        className="text-red-500 text-sm"
-                      >
-                        Delete
-                      </button>
+                      {!dept.dummy && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteDepartment(fdId);
+                          }}
+                          className="text-red-500 text-sm"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
 
                   </tr>
@@ -340,7 +286,7 @@ export default function ProjectPage() {
               className="w-full border p-2 rounded"
             >
               <option value="">Select Finding</option>
-              {findingsData.map(f => (
+              {findings.map(f => (
                 <option key={f.id} value={f.id}>
                   {f.finding_code} - {f.title}
                 </option>
@@ -383,10 +329,7 @@ export default function ProjectPage() {
 
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowModal(false)}>Cancel</button>
-              <button
-                onClick={submitAP}
-                className="bg-blue-600 text-white px-4 py-2 rounded"
-              >
+              <button onClick={submitAP} className="bg-blue-600 text-white px-4 py-2 rounded">
                 Save
               </button>
             </div>
@@ -399,7 +342,7 @@ export default function ProjectPage() {
   );
 }
 
-/* COMPONENTS */
+/* COMPONENT */
 function Card({ title, value }) {
   return (
     <div className="bg-white p-6 rounded-xl shadow">
@@ -411,15 +354,17 @@ function Card({ title, value }) {
 
 function StatusBadge({ status }) {
   const map = {
-    open: "bg-red-500",
-    need_review: "bg-yellow-500",
-    completed: "bg-blue-600",
-    closed: "bg-green-600"
+    open: "bg-blue-500",
+    in_progress: "bg-yellow-500",
+    pending_verify: "bg-orange-500",
+    closed: "bg-green-600",
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-white text-xs ${map[status] || "bg-gray-400"}`}>
-      {status}
+    <span
+      className={`px-3 py-1 rounded-full text-white text-xs whitespace-nowrap ${map[status] || "bg-gray-400"}`}
+    >
+      {status?.replaceAll("_", " ")}
     </span>
   );
 }

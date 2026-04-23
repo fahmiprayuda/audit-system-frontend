@@ -13,9 +13,7 @@ export default function ActionPlansPage() {
   const [plans, setPlans] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // ===============================
-  // FETCH FINDING + INIT PLANS
-  // ===============================
+  // ================= FETCH =================
   useEffect(() => {
     if (!id) return;
 
@@ -27,10 +25,9 @@ export default function ActionPlansPage() {
 
         setFinding(data);
 
-        // 🔥 INIT PLANS
         const initialPlans = {};
 
-        data.departments.forEach((fd) => {
+        (data.departments || []).forEach((fd) => {
           initialPlans[fd.finding_department_id] = [
             {
               root_cause: "",
@@ -51,13 +48,10 @@ export default function ActionPlansPage() {
     fetchFinding();
   }, [id]);
 
-  // ===============================
-  // HANDLE INPUT
-  // ===============================
+  // ================= INPUT =================
   const handleChange = (fdId, index, field, value) => {
 
     const updated = [...(plans[fdId] || [])];
-
     updated[index][field] = value;
 
     setPlans({
@@ -66,15 +60,13 @@ export default function ActionPlansPage() {
     });
   };
 
-  // ===============================
-  // ADD ROW
-  // ===============================
+  // ================= ADD =================
   const addRow = (fdId) => {
 
     setPlans({
       ...plans,
       [fdId]: [
-        ...(plans[fdId] || []), // 🔥 anti undefined
+        ...(plans[fdId] || []),
         {
           root_cause: "",
           corrective_action: "",
@@ -84,9 +76,7 @@ export default function ActionPlansPage() {
     });
   };
 
-  // ===============================
-  // REMOVE ROW
-  // ===============================
+  // ================= REMOVE =================
   const removeRow = (fdId, index) => {
 
     const updated = (plans[fdId] || []).filter((_, i) => i !== index);
@@ -96,18 +86,16 @@ export default function ActionPlansPage() {
       [fdId]: updated.length
         ? updated
         : [
-            {
-              root_cause: "",
-              corrective_action: "",
-              target_date: "",
-            },
-          ],
+          {
+            root_cause: "",
+            corrective_action: "",
+            target_date: "",
+          },
+        ],
     });
   };
 
-  // ===============================
-  // SUBMIT
-  // ===============================
+  // ================= SUBMIT =================
   const submitPlans = async () => {
 
     setLoading(true);
@@ -118,21 +106,30 @@ export default function ActionPlansPage() {
 
       Object.keys(plans).forEach((fdId) => {
         (plans[fdId] || []).forEach((plan) => {
+
+          // 🔥 skip kalau kosong semua
+          if (!plan.root_cause && !plan.corrective_action) return;
+
           payload.push({
-            finding_department_id: fdId,
-            root_cause: plan.root_cause,
-            corrective_action: plan.corrective_action,
-            target_date: plan.target_date,
+            finding_department_id: Number(fdId),
+            root_cause: plan.root_cause || "",
+            corrective_action: plan.corrective_action || "",
+            target_date: plan.target_date || null,
           });
+
         });
       });
 
+      if (payload.length === 0) {
+        alert("Isi minimal 1 action plan bro");
+        return;
+      }
+
       await api.post("/action-plans/bulk", {
-        finding_id: id,
         plans: payload,
       });
 
-      alert("Action Plans created!");
+      alert("Action Plans created! 🔥");
 
       router.push(`/findings/${id}`);
 
@@ -161,7 +158,7 @@ export default function ActionPlansPage() {
         {finding.title}
       </p>
 
-      {/* OVERDUE ALERT */}
+      {/* OVERDUE */}
       {finding.is_overdue && (
         <div className="bg-red-100 text-red-700 p-3 rounded mb-6">
           ⚠️ This finding is overdue
@@ -170,15 +167,16 @@ export default function ActionPlansPage() {
 
       <div className="space-y-8">
 
-        {finding.departments.map((fd) => (
+        {(finding.departments || []).map((fd) => (
 
           <div
             key={fd.finding_department_id}
             className="bg-white p-6 rounded-xl shadow"
           >
 
+            {/* 🔥 FIX NAME */}
             <h2 className="text-xl font-semibold mb-4">
-              {fd.department_name}
+              {fd.name}
             </h2>
 
             <div className="space-y-4">
@@ -190,7 +188,6 @@ export default function ActionPlansPage() {
                   className="border p-4 rounded-lg space-y-3 relative"
                 >
 
-                  {/* REMOVE */}
                   <button
                     type="button"
                     onClick={() =>
@@ -201,7 +198,6 @@ export default function ActionPlansPage() {
                     Remove
                   </button>
 
-                  {/* ROOT CAUSE */}
                   <textarea
                     placeholder="Root Cause"
                     value={plan.root_cause}
@@ -216,7 +212,6 @@ export default function ActionPlansPage() {
                     className="w-full border px-3 py-2 rounded"
                   />
 
-                  {/* CORRECTIVE ACTION */}
                   <textarea
                     placeholder="Corrective Action"
                     value={plan.corrective_action}
@@ -231,7 +226,6 @@ export default function ActionPlansPage() {
                     className="w-full border px-3 py-2 rounded"
                   />
 
-                  {/* DATE */}
                   <input
                     type="date"
                     value={plan.target_date}
@@ -249,7 +243,6 @@ export default function ActionPlansPage() {
                 </div>
               ))}
 
-              {/* ADD BUTTON */}
               <button
                 type="button"
                 onClick={() => addRow(fd.finding_department_id)}

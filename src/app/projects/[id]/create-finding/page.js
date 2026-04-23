@@ -6,7 +6,7 @@ import api from "@/lib/axios";
 
 export default function CreateFindingPage() {
 
-  const { id } = useParams(); // project id
+  const { id } = useParams();
   const router = useRouter();
 
   const [title, setTitle] = useState("");
@@ -17,17 +17,18 @@ export default function CreateFindingPage() {
   const [departments, setDepartments] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
 
+  // 🔥 ACTION PLAN STATE
+  const [actionPlans, setActionPlans] = useState({});
+
   const [loading, setLoading] = useState(false);
   const [loadingDepartments, setLoadingDepartments] = useState(true);
 
-  // ===============================
-  // FETCH DEPARTMENTS
-  // ===============================
+  // ================= FETCH =================
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
         const res = await api.get("/departments");
-        setDepartments(res.data);
+        setDepartments(res.data || []);
       } catch (err) {
         console.error(err);
         alert("Failed to load departments");
@@ -39,64 +40,88 @@ export default function CreateFindingPage() {
     fetchDepartments();
   }, []);
 
-  // ===============================
-  // TOGGLE DEPARTMENT
-  // ===============================
+  // ================= TOGGLE =================
   const toggleDepartment = (deptId) => {
     deptId = String(deptId);
 
     if (selectedDepartments.includes(deptId)) {
-      setSelectedDepartments(
-        selectedDepartments.filter((id) => id !== deptId)
-      );
+      // REMOVE
+      setSelectedDepartments(prev => prev.filter(id => id !== deptId));
+
+      const updated = { ...actionPlans };
+      delete updated[deptId];
+      setActionPlans(updated);
+
     } else {
-      setSelectedDepartments([...selectedDepartments, deptId]);
+      // ADD
+      setSelectedDepartments(prev => [...prev, deptId]);
+
+      setActionPlans(prev => ({
+        ...prev,
+        [deptId]: {
+          root_cause: "",
+          corrective_action: "",
+          target_date: ""
+        }
+      }));
     }
   };
 
-  // ===============================
-  // SUBMIT
-  // ===============================
+  // ================= HANDLE AP =================
+  const handleAPChange = (deptId, field, value) => {
+    setActionPlans({
+      ...actionPlans,
+      [deptId]: {
+        ...actionPlans[deptId],
+        [field]: value
+      }
+    });
+  };
+
+  // ================= SUBMIT =================
   const submitFinding = async (e) => {
     e.preventDefault();
 
-    if (!id) {
-      alert("Project ID not found");
-      return;
-    }
+    if (!id) return alert("Project ID not found");
+    if (selectedDepartments.length === 0)
+      return alert("Select at least 1 department");
 
-    if (selectedDepartments.length === 0) {
-      alert("Select at least 1 department");
-      return;
+    // 🔥 VALIDASI AP
+    for (let deptId of selectedDepartments) {
+      const ap = actionPlans[deptId];
+
+      if (!ap?.corrective_action) {
+        return alert("Semua department wajib punya corrective action");
+      }
     }
 
     setLoading(true);
 
     try {
-
-      const res = await api.post("/findings", {
+      await api.post("/findings", {
         audit_project_id: id,
         title,
         description,
         risk_rating: risk,
         due_date: dueDate,
+
+        // 🔥 departments
         departments: selectedDepartments.map(Number),
+
+        // 🔥 action plans langsung
+        action_plans: selectedDepartments.map((deptId) => ({
+          department_id: Number(deptId),
+          root_cause: actionPlans[deptId]?.root_cause || "",
+          corrective_action: actionPlans[deptId]?.corrective_action || "",
+          target_date: actionPlans[deptId]?.target_date || null,
+        })),
       });
 
-      console.log("CREATE FINDING RESPONSE:", res.data);
+      alert("Finding + Action Plan created 🚀");
 
-      // 🔥 FIX UTAMA DI SINI
-      const newFinding = res.data.data || res.data;
-
-      if (!newFinding?.id) {
-        throw new Error("Finding ID not found in response");
-      }
-
-      // 🔥 redirect ke action plan page
       router.push(`/projects/${id}`);
 
     } catch (err) {
-
       console.error(err);
 
       alert(
@@ -113,117 +138,129 @@ export default function CreateFindingPage() {
   return (
     <div className="p-10 bg-gray-100 min-h-screen">
 
-      <h1 className="text-3xl font-bold mb-8">
+      <h1 className="text-3xl font-bold mb-6">
         Create Finding
       </h1>
 
       <form
         onSubmit={submitFinding}
-        className="bg-white p-8 rounded-xl shadow max-w-2xl space-y-6"
+        className="bg-white p-8 rounded-xl shadow max-w-3xl space-y-6"
       >
 
         {/* TITLE */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Finding Title
-          </label>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-            required
-          />
-        </div>
+        <input
+          placeholder="Finding Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+          required
+        />
 
         {/* DESCRIPTION */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-          />
-        </div>
+        <textarea
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
 
         {/* RISK */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Risk Rating
-          </label>
-          <select
-            value={risk}
-            onChange={(e) => setRisk(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-          >
-            <option value="Extreme">Extreme</option>
-            <option value="Major">Major</option>
-            <option value="Moderate">Moderate</option>
-          </select>
-        </div>
+        <select
+          value={risk}
+          onChange={(e) => setRisk(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        >
+          <option value="Extreme">Extreme</option>
+          <option value="Major">Major</option>
+          <option value="Moderate">Moderate</option>
+        </select>
 
         {/* DUE DATE */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Due Date (Global)
-          </label>
-          <input
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-          />
-        </div>
+        <input
+          type="date"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="w-full border px-3 py-2 rounded"
+        />
 
         {/* DEPARTMENTS */}
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Departments
-          </label>
+          <h3 className="font-semibold mb-2">Departments</h3>
 
-          {loadingDepartments ? (
-            <p className="text-gray-500 text-sm">
-              Loading departments...
-            </p>
-          ) : (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                {(departments || []).map((dept) => (
-                  <label
-                    key={dept.id}
-                    className="flex items-center gap-2 border p-2 rounded cursor-pointer hover:bg-gray-50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedDepartments.includes(String(dept.id))}
-                      onChange={() => toggleDepartment(dept.id)}
-                    />
-                    {dept.name}
-                  </label>
-                ))}
-              </div>
+          <div className="grid grid-cols-2 gap-2 mb-4">
+            {departments.map((dept) => {
+              const checked = selectedDepartments.includes(String(dept.id));
 
-              {/* 🔥 INI TARUH DI SINI */}
-              {selectedDepartments.length > 0 && (
-                <div className="mt-2 text-sm text-blue-600">
-                  Selected: {selectedDepartments.length} department(s)
+              return (
+                <div
+                  key={dept.id}
+                  onClick={() => toggleDepartment(dept.id)}
+                  className={`border p-2 rounded cursor-pointer ${checked ? "bg-blue-100 border-blue-400" : ""
+                    }`}
+                >
+                  {dept.name}
                 </div>
-              )}
-            </>
-          )}
+              );
+            })}
+          </div>
+
+          {/* 🔥 ACTION PLAN AUTO FORM */}
+          {selectedDepartments.map((deptId) => {
+
+            const dept = departments.find(d => String(d.id) === deptId);
+            const ap = actionPlans[deptId];
+
+            return (
+              <div key={deptId} className="border p-4 rounded mb-4 bg-gray-50">
+
+                <h4 className="font-bold mb-2">
+                  {dept?.name}
+                </h4>
+
+                <textarea
+                  placeholder="Root Cause"
+                  value={ap?.root_cause || ""}
+                  onChange={(e) =>
+                    handleAPChange(deptId, "root_cause", e.target.value)
+                  }
+                  className="w-full border p-2 rounded mb-2"
+                />
+
+                <textarea
+                  placeholder="Corrective Action *"
+                  value={ap?.corrective_action || ""}
+                  onChange={(e) =>
+                    handleAPChange(deptId, "corrective_action", e.target.value)
+                  }
+                  className="w-full border p-2 rounded mb-2"
+                  required
+                />
+
+                <input
+                  type="date"
+                  value={ap?.target_date || ""}
+                  onChange={(e) =>
+                    handleAPChange(deptId, "target_date", e.target.value)
+                  }
+                  className="border p-2 rounded"
+                />
+
+              </div>
+            );
+          })}
+
         </div>
 
-        {/* SUBMIT */}
         <button
           type="submit"
           disabled={loading}
-          className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          className="bg-blue-600 text-white px-6 py-2 rounded"
         >
           {loading ? "Creating..." : "Create Finding"}
         </button>
 
       </form>
+
     </div>
   );
 }

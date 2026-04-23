@@ -15,23 +15,6 @@ export default function FindingDetailPage() {
   const [finding, setFinding] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [showAPModal, setShowAPModal] = useState(false);
-
-  const [selectedAction, setSelectedAction] = useState("");
-  const [selectedAP, setSelectedAP] = useState(null);
-  const [note, setNote] = useState("");
-
-  const [selectedFD, setSelectedFD] = useState("");
-
-  const [form, setForm] = useState({
-    root_cause: "",
-    corrective_action: "",
-    target_date: "",
-    status: "open"
-  });
-
-  // ================= FETCH =================
   const fetchFinding = async () => {
     try {
       setLoading(true);
@@ -52,96 +35,28 @@ export default function FindingDetailPage() {
   if (loading) return <p className="p-10">Loading...</p>;
   if (!finding) return <p className="p-10">Data not found</p>;
 
-  // ================= SAFE DATA =================
-  const departments = Array.isArray(finding?.departments)
-    ? finding.departments
-    : [];
+  const departments = finding.departments || [];
 
   const filteredDepartments = fdId
-    ? departments.filter(
-      d => String(d.finding_department_id) === String(fdId)
-    )
+    ? departments.filter(d => String(d.finding_department_id) === String(fdId))
     : departments;
-
-  // ================= FORM =================
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmitAP = async (e) => {
-    e.preventDefault();
-
-    const fdTarget = selectedFD || fdId;
-
-    if (!fdTarget) {
-      alert("Pilih department dulu bro");
-      return;
-    }
-
-    try {
-      await api.post("/action-plans", {
-        ...form,
-        finding_department_id: fdTarget
-      });
-
-      alert("Action Plan berhasil ditambahkan 🔥");
-
-      setShowAPModal(false);
-      setSelectedFD("");
-
-      setForm({
-        root_cause: "",
-        corrective_action: "",
-        target_date: "",
-        status: "open"
-      });
-
-      fetchFinding();
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to create action plan");
-    }
-  };
-
-  // ================= VERIFY =================
-  const submitVerification = async () => {
-    if (!selectedAP) return;
-
-    try {
-      await api.post("/verifications", {
-        action_plan_id: selectedAP,
-        status: selectedAction,
-        note: note
-      });
-
-      alert("Verification submitted 🔥");
-
-      setShowVerifyModal(false);
-      setNote("");
-
-      fetchFinding();
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed verification");
-    }
-  };
 
   return (
     <div className="p-10 bg-gray-100 min-h-screen">
 
       {/* HEADER */}
-      <h1 className="text-3xl font-bold mb-6">
-        {finding.finding_code}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">
+          {finding.finding_code}
+        </h1>
 
-        {finding.is_overdue && (
-          <span className="ml-3 text-red-600">🔴 OVERDUE</span>
-        )}
-      </h1>
+        <button
+          onClick={() => router.back()}
+          className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+        >
+          ← Back
+        </button>
+      </div>
 
       {/* INFO */}
       <div className="bg-white p-6 rounded-xl shadow mb-6">
@@ -153,75 +68,105 @@ export default function FindingDetailPage() {
           {finding.description || "-"}
         </p>
 
-        <div className="flex gap-6 flex-wrap">
+        <div className="flex gap-6 flex-wrap items-center">
           <p><b>Risk:</b> {finding.risk_rating}</p>
-          <p><b>Status:</b> <StatusBadge status={finding.status} /></p>
           <p><b>Due:</b> {formatDate(finding.due_date)}</p>
+          <StatusBadge status={finding.status} />
         </div>
       </div>
 
-      {/* ACTION PLAN */}
+      {/* DEPARTMENTS */}
       <div className="bg-white p-6 rounded-xl shadow mb-6">
         <h2 className="text-xl font-semibold mb-4">
-          Action Plans per Department
+          Departments & Action Plans
         </h2>
 
-        {filteredDepartments.map((fd) => {
+        {filteredDepartments.map(fd => {
 
           const plans = fd.action_plans || [];
 
           return (
-            <div key={fd.finding_department_id} className="border p-4 rounded mb-4 bg-gray-50">
+            <div key={fd.finding_department_id} className="mb-6">
 
-              <div className="flex justify-between mb-3">
-                <h3 className="font-bold">{fd.department_name}</h3>
-                <span className="text-sm text-gray-500">
-                  {plans.length} plan
-                </span>
+              {/* 🔥 HEADER DEPARTMENT */}
+              <div className="flex justify-between items-center mb-2">
+
+                <div>
+                  <h3 className="text-base font-semibold text-gray-800">
+                    {fd.name || "-"}
+                  </h3>
+
+                  <p className="text-xs text-gray-400">
+                    {plans.length} action plan
+                  </p>
+                </div>
+
+                <StatusBadge status={fd.status} />
+
               </div>
 
-              {plans.length > 0 ? (
-                plans.map(ap => (
-                  <div key={ap.id} className="bg-white border p-3 rounded mb-2">
+              {/* 🔥 CARD */}
+              <div className="border rounded-xl p-5 bg-gray-50 shadow-sm">
 
-                    <div className="flex justify-between">
-                      <p>{ap.corrective_action}</p>
-                      <StatusBadge status={ap.status} />
-                    </div>
+                {plans.length > 0 ? (
+                  plans.map(ap => {
 
-                    <p className="text-sm text-gray-500">
-                      Target: {formatDate(ap.target_date)}
-                    </p>
+                    const isOverdue =
+                      ap.target_date &&
+                      new Date(ap.target_date) < new Date() &&
+                      ap.status !== "verified";
 
-                    <div className="mt-2 flex gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedAction("approved");
-                          setSelectedAP(ap.id);
-                          setShowVerifyModal(true);
-                        }}
-                        className="bg-green-600 text-white px-2 py-1 text-sm rounded"
+                    return (
+                      <div
+                        key={ap.id}
+                        className={`p-4 rounded-lg mb-4 border shadow-sm ${isOverdue
+                          ? "bg-red-50 border-red-300"
+                          : "bg-white"
+                          }`}
                       >
-                        Approve
-                      </button>
 
-                      <button
-                        onClick={() => {
-                          setSelectedAction("rejected");
-                          setSelectedAP(ap.id);
-                          setShowVerifyModal(true);
-                        }}
-                        className="bg-red-600 text-white px-2 py-1 text-sm rounded"
-                      >
-                        Reject
-                      </button>
-                    </div>
+                        {/* ROOT CAUSE */}
+                        <div className="mb-2">
+                          <p className="text-xs text-gray-500">
+                            Root Cause
+                          </p>
+                          <p className="text-sm font-medium">
+                            {ap.root_cause || "-"}
+                          </p>
+                        </div>
 
-                  </div>
-                ))
-              ) : (
-                <p className="text-red-500">No action plan</p>
-              )}
+                        {/* ACTION */}
+                        <div className="mb-3">
+                          <p className="text-xs text-gray-500">
+                            Corrective Action
+                          </p>
+                          <p className="text-sm font-medium">
+                            {ap.corrective_action || "-"}
+                          </p>
+                        </div>
+
+                        {/* FOOTER */}
+                        <div className="flex justify-between items-center">
+
+                          <p className="text-xs text-gray-500">
+                            Target: {formatDate(ap.target_date)}
+                          </p>
+
+                          <StatusBadge status={ap.status} />
+
+                        </div>
+
+                      </div>
+                    );
+
+                  })
+                ) : (
+                  <p className="text-gray-400 italic text-sm">
+                    No action plan yet
+                  </p>
+                )}
+
+              </div>
 
             </div>
           );
@@ -229,106 +174,46 @@ export default function FindingDetailPage() {
       </div>
 
       {/* FOOTER */}
-      <div className="flex justify-end gap-3">
-
+      <div className="flex justify-end">
         <button
-          onClick={() => router.back()}
-          className="px-4 py-2 bg-gray-300 rounded"
-        >
-          Back
-        </button>
-
-        <button
-          onClick={() => setShowAPModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          onClick={() => router.push(`/findings/${id}/action-plans`)}
+          className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
         >
           + Add Action Plan
         </button>
-
       </div>
-
-      {/* MODAL AP */}
-      {showAPModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded w-[500px] space-y-4">
-
-            <h2 className="text-xl font-bold">Add Action Plan</h2>
-
-            {!fdId && (
-              <select
-                value={selectedFD}
-                onChange={(e) => setSelectedFD(e.target.value)}
-                className="w-full border p-2 rounded"
-              >
-                <option value="">Select Department</option>
-                {departments.map(fd => (
-                  <option key={fd.finding_department_id} value={fd.finding_department_id}>
-                    {fd.department_name}
-                  </option>
-                ))}
-              </select>
-            )}
-
-            <textarea name="root_cause" value={form.root_cause} onChange={handleChange} placeholder="Root cause..." className="w-full border p-2 rounded" />
-            <textarea name="corrective_action" value={form.corrective_action} onChange={handleChange} placeholder="Corrective action..." className="w-full border p-2 rounded" />
-            <input type="date" name="target_date" value={form.target_date} onChange={handleChange} className="w-full border p-2 rounded" />
-
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowAPModal(false)}>Cancel</button>
-              <button onClick={handleSubmitAP} className="bg-blue-600 text-white px-4 py-2 rounded">
-                Save
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* MODAL VERIFY */}
-      {showVerifyModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded w-96 space-y-3">
-
-            <h2 className="text-lg font-bold">Verification</h2>
-
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              placeholder="Note..."
-              className="w-full border p-2 rounded"
-            />
-
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowVerifyModal(false)}>Cancel</button>
-              <button onClick={submitVerification} className="bg-blue-600 text-white px-4 py-2 rounded">
-                Submit
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
 
     </div>
   );
 }
 
-/* COMPONENTS */
+
+/* ================= STATUS ================= */
 
 function StatusBadge({ status }) {
+
   const map = {
-    open: "bg-red-500",
-    need_review: "bg-yellow-500",
-    completed: "bg-blue-600",
-    closed: "bg-green-600"
+    open: "bg-blue-500",
+    in_progress: "bg-yellow-500",
+    pending_verify: "bg-orange-500",
+    closed: "bg-green-600",
+
+    draft: "bg-gray-500",
+    submitted: "bg-blue-400",
+    approved: "bg-purple-500",
+    done: "bg-green-500",
+    verified: "bg-green-700",
   };
 
   return (
-    <span className={`px-3 py-1 rounded-full text-white text-xs ${map[status]}`}>
-      {status}
+    <span className={`px-3 py-1 rounded-full text-white text-xs whitespace-nowrap ${map[status] || "bg-gray-400"}`}>
+      {status?.replaceAll("_", " ")}
     </span>
   );
 }
+
+
+/* ================= DATE ================= */
 
 function formatDate(date) {
   if (!date) return "-";

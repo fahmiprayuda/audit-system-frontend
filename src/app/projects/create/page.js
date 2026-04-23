@@ -17,15 +17,12 @@ export default function CreateProjectPage() {
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // ===============================
-  // FETCH COMPANIES
-  // ===============================
+  // ================= FETCH =================
   useEffect(() => {
-
     const fetchCompanies = async () => {
       try {
         const res = await api.get("/companies");
-        setCompanies(res.data);
+        setCompanies(res.data || []);
       } catch (err) {
         console.error(err);
         alert("Failed to load companies");
@@ -35,38 +32,40 @@ export default function CreateProjectPage() {
     };
 
     fetchCompanies();
-
   }, []);
 
-  // ===============================
-  // SUBMIT
-  // ===============================
+  // ================= SUBMIT =================
   const submitProject = async (e) => {
     e.preventDefault();
 
-    // 🔥 VALIDASI DATE
+    if (!company) return alert("Company wajib dipilih");
+    if (!name.trim()) return alert("Project name wajib diisi");
+
     if (startDate && endDate && endDate < startDate) {
-      alert("End date cannot be earlier than start date");
-      return;
+      return alert("End date tidak boleh sebelum start date");
     }
 
     setSubmitting(true);
 
     try {
-
       await api.post("/projects", {
-        company_id: company,
-        project_name: name,
-        start_date: startDate,
-        end_date: endDate,
+        company_id: Number(company),
+        project_name: name.trim(),
+        start_date: startDate || null,
+        end_date: endDate || null,
       });
+
+      alert("Project created successfully 🚀");
 
       router.push("/projects");
 
     } catch (err) {
-
       console.error(err);
-      alert(err.response?.data?.message || "Failed to create project");
+
+      alert(
+        err.response?.data?.message ||
+        "Failed to create project"
+      );
 
     } finally {
       setSubmitting(false);
@@ -76,9 +75,19 @@ export default function CreateProjectPage() {
   return (
     <div className="p-10 bg-gray-100 min-h-screen">
 
-      <h1 className="text-3xl font-bold mb-8">
-        Create Audit Project
-      </h1>
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">
+          Create Audit Project
+        </h1>
+
+        <button
+          onClick={() => router.back()}
+          className="bg-yellow-400 px-4 py-2 rounded"
+        >
+          ← Back
+        </button>
+      </div>
 
       <form
         onSubmit={submitProject}
@@ -93,6 +102,7 @@ export default function CreateProjectPage() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="Contoh: General Audit 2026"
             className="w-full border px-3 py-2 rounded"
             required
           />
@@ -105,7 +115,9 @@ export default function CreateProjectPage() {
           </label>
 
           {loadingCompanies ? (
-            <p className="text-gray-500 text-sm">Loading companies...</p>
+            <p className="text-gray-500 text-sm">
+              Loading companies...
+            </p>
           ) : (
             <select
               value={company}
@@ -120,7 +132,6 @@ export default function CreateProjectPage() {
                   {c.code} - {c.name}
                 </option>
               ))}
-
             </select>
           )}
         </div>
