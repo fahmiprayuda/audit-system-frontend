@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/axios";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 export default function CreateFindingPage() {
 
@@ -12,7 +14,6 @@ export default function CreateFindingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [risk, setRisk] = useState("Moderate");
-  const [dueDate, setDueDate] = useState("");
 
   const [departments, setDepartments] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
@@ -61,7 +62,8 @@ export default function CreateFindingPage() {
         [deptId]: {
           root_cause: "",
           corrective_action: "",
-          target_date: ""
+          start_date: "",
+          target_date: "",
         }
       }));
     }
@@ -83,48 +85,67 @@ export default function CreateFindingPage() {
     e.preventDefault();
 
     if (!id) return alert("Project ID not found");
-    if (selectedDepartments.length === 0)
-      return alert("Select at least 1 department");
 
-    // 🔥 VALIDASI AP
+    if (selectedDepartments.length === 0) {
+      return alert("Select at least 1 department");
+    }
+
     for (let deptId of selectedDepartments) {
       const ap = actionPlans[deptId];
 
-      if (!ap?.corrective_action) {
+      if (!ap?.corrective_action?.trim()) {
         return alert("Semua department wajib punya corrective action");
+      }
+
+      if (
+        ap.start_date &&
+        ap.target_date &&
+        new Date(ap.target_date) < new Date(ap.start_date)
+      ) {
+        return alert("Target date tidak boleh sebelum start date");
       }
     }
 
     setLoading(true);
 
     try {
-      await api.post("/findings", {
-        audit_project_id: id,
+
+      const payload = {
+        audit_project_id: Number(id),
         title,
         description,
         risk_rating: risk,
-        due_date: dueDate,
 
-        // 🔥 departments
         departments: selectedDepartments.map(Number),
 
-        // 🔥 action plans langsung
         action_plans: selectedDepartments.map((deptId) => ({
           department_id: Number(deptId),
           root_cause: actionPlans[deptId]?.root_cause || "",
           corrective_action: actionPlans[deptId]?.corrective_action || "",
-          target_date: actionPlans[deptId]?.target_date || null,
+          start_date: actionPlans[deptId]?.start_date
+            ? actionPlans[deptId].start_date.toISOString().split("T")[0]
+            : null,
+
+          target_date: actionPlans[deptId]?.target_date
+            ? actionPlans[deptId].target_date.toISOString().split("T")[0]
+            : null,
         })),
-      });
+      };
+
+      console.log("PAYLOAD:", payload);
+
+      await api.post("/findings", payload);
 
       alert("Finding + Action Plan created 🚀");
 
       router.push(`/projects/${id}`);
 
     } catch (err) {
-      console.error(err);
+
+      console.log(err.response?.data);
 
       alert(
+        err.response?.data?.error ||
         err.response?.data?.message ||
         err.message ||
         "Failed to create finding"
@@ -175,13 +196,6 @@ export default function CreateFindingPage() {
           <option value="Moderate">Moderate</option>
         </select>
 
-        {/* DUE DATE */}
-        <input
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-          className="w-full border px-3 py-2 rounded"
-        />
 
         {/* DEPARTMENTS */}
         <div>
@@ -236,14 +250,39 @@ export default function CreateFindingPage() {
                   required
                 />
 
-                <input
-                  type="date"
-                  value={ap?.target_date || ""}
-                  onChange={(e) =>
-                    handleAPChange(deptId, "target_date", e.target.value)
-                  }
-                  className="border p-2 rounded"
-                />
+                <div className="gap-3 mt-2">
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Timeline
+                    </label>
+
+                    <DatePicker
+                      selectsRange
+                      startDate={ap?.start_date}
+                      endDate={ap?.target_date}
+                      onChange={(dates) => {
+                        const [start, end] = dates;
+
+                        setActionPlans((prev) => ({
+                          ...prev,
+                          [deptId]: {
+                            ...prev[deptId],
+                            start_date: start,
+                            target_date: end,
+                          },
+                        }));
+                      }}
+                      isClearable
+                      monthsShown={2}
+                      dateFormat="dd/MM/yyyy"
+                      placeholderText="Select timeline"
+                      wrapperClassName="w-full"
+                      className="w-full border p-2 rounded"
+                    />
+                  </div>
+
+                </div>
 
               </div>
             );

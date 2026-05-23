@@ -158,13 +158,6 @@ export default function ActionPlansPage() {
         {finding.title}
       </p>
 
-      {/* OVERDUE */}
-      {finding.is_overdue && (
-        <div className="bg-red-100 text-red-700 p-3 rounded mb-6">
-          ⚠️ This finding is overdue
-        </div>
-      )}
-
       <div className="space-y-8">
 
         {(finding.departments || []).map((fd) => (

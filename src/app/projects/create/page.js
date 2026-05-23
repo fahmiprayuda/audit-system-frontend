@@ -11,7 +11,6 @@ export default function CreateProjectPage() {
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
 
   const [companies, setCompanies] = useState([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
@@ -41,9 +40,6 @@ export default function CreateProjectPage() {
     if (!company) return alert("Company wajib dipilih");
     if (!name.trim()) return alert("Project name wajib diisi");
 
-    if (startDate && endDate && endDate < startDate) {
-      return alert("End date tidak boleh sebelum start date");
-    }
 
     setSubmitting(true);
 
@@ -52,7 +48,6 @@ export default function CreateProjectPage() {
         company_id: Number(company),
         project_name: name.trim(),
         start_date: startDate || null,
-        end_date: endDate || null,
       });
 
       alert("Project created successfully 🚀");
@@ -137,7 +132,7 @@ export default function CreateProjectPage() {
         </div>
 
         {/* DATE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="max-w-sm">
 
           <div>
             <label className="block text-sm font-medium mb-1">
@@ -148,19 +143,6 @@ export default function CreateProjectPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border px-3 py-2 rounded"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              End Date
-            </label>
-
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
               className="w-full border px-3 py-2 rounded"
             />
           </div>

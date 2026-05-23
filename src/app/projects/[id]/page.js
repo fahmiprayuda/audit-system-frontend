@@ -1,46 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import api from "@/lib/axios";
+
+import StatusBadge from "@/components/badges/StatusBadge";
+import DatePicker from "react-datepicker";
+
+import "react-datepicker/dist/react-datepicker.css";
+
+import useActionPlan from "@/hooks/useActionPlan";
+import useProjectDetail from "@/hooks/useProjectDetail";
 
 export default function ProjectPage() {
   const { id } = useParams();
   const router = useRouter();
 
-  const [data, setData] = useState(null);
-  const [departments, setDepartments] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const { handleCreatePlan } = useActionPlan();
 
   const [form, setForm] = useState({
     finding_id: "",
     department_id: "",
     root_cause: "",
     corrective_action: "",
-    target_date: ""
+    start_date: null,
+    target_date: null
   });
 
-  // ================= FETCH =================
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [res, dept] = await Promise.all([
-          api.get(`/projects/${id}`),
-          api.get("/departments")
-        ]);
+  const {
+    data,
+    departments,
+    loading,
+    fetchData,
+    deleteDepartment,
+  } = useProjectDetail(id);
 
-        setData(res?.data || null);
-        setDepartments(dept?.data || []);
-      } catch (err) {
-        console.error(err);
-        alert("Failed to load project");
-      }
-    };
 
-    if (id) fetchData();
-  }, [id]);
-
-  if (!data) return <p className="p-10">Loading...</p>;
+  if (loading) {
+    return <p className="p-10">Loading...</p>;
+  }
 
   const project = data.project;
   const findings = data.findings || [];
@@ -57,45 +56,31 @@ export default function ProjectPage() {
     }
   };
 
-  const deleteDepartment = async (fdId) => {
-    if (!confirm("Remove this department?")) return;
-
-    try {
-      await api.delete(`/finding-departments/${fdId}`);
-
-      setData(prev => ({
-        ...prev,
-        findings: prev.findings.map(f => ({
-          ...f,
-          departments: f.departments.filter(
-            d => d.finding_department_id !== fdId
-          )
-        }))
-      }));
-
-    } catch (err) {
-      console.error(err);
-      alert("Failed to delete");
-    }
-  };
-
   // ================= SUBMIT AP =================
   const submitAP = async () => {
+
     if (!form.finding_id || !form.department_id) {
       return alert("Finding & Department wajib diisi");
     }
 
     try {
+
       let fdId;
 
-      const finding = findings.find(f => f.id == form.finding_id);
+      const finding = findings.find(
+        f => f.id == form.finding_id
+      );
+
       const existing = finding?.departments?.find(
         d => d.department_id == form.department_id
       );
 
       if (existing) {
+
         fdId = existing.finding_department_id;
+
       } else {
+
         const fd = await api.post("/finding-departments", {
           finding_id: form.finding_id,
           department_id: form.department_id
@@ -104,27 +89,35 @@ export default function ProjectPage() {
         fdId = fd.data.id;
       }
 
-      await api.post("/action-plans", {
+      const success = await handleCreatePlan({
         finding_department_id: fdId,
         root_cause: form.root_cause,
         corrective_action: form.corrective_action,
+        start_date: form.start_date,
         target_date: form.target_date,
-        status: "draft" // ✅ FIX
       });
 
-      alert("Action Plan Created");
+      if (!success) return;
+
+      alert("Action Plan berhasil dibuat !! 🔥");
+
+      await fetchData();
 
       setShowModal(false);
+
       setForm({
         finding_id: "",
         department_id: "",
         root_cause: "",
         corrective_action: "",
-        target_date: ""
+        start_date: null,
+        target_date: null
       });
 
     } catch (err) {
+
       console.error(err);
+
       alert("Failed create AP");
     }
   };
@@ -138,9 +131,9 @@ export default function ProjectPage() {
     departments: allDepartments.length,
     actionPlans: allAP.length,
     draft: allAP.filter(a => a.status === "draft").length,
-    progress: allAP.filter(a => a.status === "in_progress").length,
-    done: allAP.filter(a => a.status === "done").length,
-    verified: allAP.filter(a => a.status === "verified").length,
+    submitted: allAP.filter(a => a.status === "submitted").length,
+    needRevision: allAP.filter(a => a.status === "need_revision").length,
+    approved: allAP.filter(a => a.status === "approved").length,
   };
 
   return (
@@ -186,9 +179,9 @@ export default function ProjectPage() {
         <Card title="Findings" value={summary.findings} />
         <Card title="Departments" value={summary.departments} />
         <Card title="AP" value={summary.actionPlans} />
-        <Card title="Draft" value={summary.draft} />
-        <Card title="Progress" value={summary.progress} />
-        <Card title="Done" value={summary.done} />
+        <Card title="Draft / Open" value={summary.draft} />
+        <Card title="NFR" value={summary.submitted} />
+        <Card title="Closed" value={summary.approved} />
         <Card title="Verified" value={summary.verified} />
       </div>
 
@@ -234,7 +227,7 @@ export default function ProjectPage() {
                     <td className="p-4">{finding.risk_rating}</td>
 
                     <td className="p-4">
-                      <StatusBadge status={dept.status} />
+                      <StatusBadge status={finding.status} />
                     </td>
 
                     <td className="p-4">
@@ -275,10 +268,24 @@ export default function ProjectPage() {
 
       {/* MODAL */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-xl w-[500px] space-y-4">
+        <div
+          onClick={() => setShowModal(false)}
+          className="fixed inset-0 bg-black/40 flex justify-center items-center">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white p-6 rounded-xl w-[500px] space-y-4">
 
-            <h2 className="text-xl font-bold">Add Action Plan</h2>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">Add Action Plan</h2>
+
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-500 hover:text-black text-xl"
+              >
+                ✕
+              </button>
+            </div>
+
 
             <select
               value={form.finding_id}
@@ -306,13 +313,18 @@ export default function ProjectPage() {
               ))}
             </select>
 
+            <label className="mt-6 block text-sm font-medium">
+              Root Cause <span className="text-red-500">*</span>
+            </label>
             <textarea
               placeholder="Root Cause"
               value={form.root_cause}
               onChange={(e) => setForm({ ...form, root_cause: e.target.value })}
               className="w-full border p-2 rounded"
             />
-
+            <label className="block text-sm font-medium">
+              Corrective Action <span className="text-red-500">*</span>
+            </label>
             <textarea
               placeholder="Corrective Action"
               value={form.corrective_action}
@@ -320,12 +332,33 @@ export default function ProjectPage() {
               className="w-full border p-2 rounded"
             />
 
-            <input
-              type="date"
-              value={form.target_date}
-              onChange={(e) => setForm({ ...form, target_date: e.target.value })}
-              className="w-full border p-2 rounded"
-            />
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Timeline
+              </label>
+
+              <DatePicker
+                selectsRange
+                startDate={form.start_date}
+                endDate={form.target_date}
+                onChange={(dates) => {
+                  const [start, end] = dates;
+
+                  setForm((prev) => ({
+                    ...prev,
+                    start_date: start,
+                    target_date: end,
+                  }));
+                }}
+                isClearable
+                monthsShown={2}
+                dateFormat="dd MMM yyyy"
+                placeholderText="Select timeline"
+                wrapperClassName="w-full"
+                className="w-full border border-slate-300 px-4 py-3 rounded-xl"
+              />
+
+            </div>
 
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowModal(false)}>Cancel</button>
@@ -349,23 +382,6 @@ function Card({ title, value }) {
       <p className="text-gray-500 text-sm">{title}</p>
       <h2 className="text-2xl font-bold">{value}</h2>
     </div>
-  );
-}
-
-function StatusBadge({ status }) {
-  const map = {
-    open: "bg-blue-500",
-    in_progress: "bg-yellow-500",
-    pending_verify: "bg-orange-500",
-    closed: "bg-green-600",
-  };
-
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-white text-xs whitespace-nowrap ${map[status] || "bg-gray-400"}`}
-    >
-      {status?.replaceAll("_", " ")}
-    </span>
   );
 }
 

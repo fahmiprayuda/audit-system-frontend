@@ -17,17 +17,19 @@ const body = KoHo({
 
 export const metadata = {
   title: "Monitoring Dashboard Audit",
-  description: "A monitoring dashboard audit project built with Next.js, Tailwind CSS, and React. This project provides insights into the performance and health of your applications through a user-friendly interface. It includes features such as real-time monitoring, customizable dashboards, and alerting capabilities to help you stay on top of your application's performance. Whether you're a developer, DevOps engineer, or IT professional, this dashboard audit project is designed to help you optimize your monitoring strategy and ensure the reliability of your applications.",
+  description: "Monitoring dashboard audit system",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${heading.variable} ${body.variable}`}>
-      <body className="font-body bg-white text-gray-900">
+      <body className="font-body bg-[#f8fafc] text-gray-900">
         <Topbar />
-        <div className="flex">
+
+        <div>
           <Sidebar />
-          <main className="flex-1 p-6">
+
+          <main className="flex-1 ml-20 p-6 min-h-screen transition-all duration-300">
             {children}
           </main>
         </div>

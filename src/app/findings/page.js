@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
+import StatusBadge from "@/components/badges/StatusBadge";
+import RiskBadge from "@/components/badges/RiskBadge";
 
 export default function FindingsPage() {
 
@@ -223,12 +225,6 @@ export default function FindingsPage() {
                   {/* STATUS */}
                   <td className="p-4">
                     <StatusBadge status={finding.status} />
-
-                    {finding.status === "pending_verify" && (
-                      <span className="ml-2 text-orange-500 font-bold">
-                        ⚠️
-                      </span>
-                    )}
                   </td>
 
                   {/* DUE */}
@@ -281,47 +277,6 @@ export default function FindingsPage() {
       )}
 
     </div>
-  );
-}
-
-
-/* ================= STATUS ================= */
-
-function StatusBadge({ status }) {
-
-  const map = {
-    open: "bg-blue-500",
-    in_progress: "bg-yellow-500",
-    pending_verify: "bg-orange-500",
-    closed: "bg-green-600",
-  };
-
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-white text-xs whitespace-nowrap ${map[status] || "bg-gray-400"}`}
-    >
-      {status?.replaceAll("_", " ")}
-    </span>
-  );
-}
-
-
-/* ================= RISK ================= */
-
-function RiskBadge({ risk }) {
-
-  const map = {
-    Extreme: "bg-red-700",
-    Major: "bg-orange-500",
-    Moderate: "bg-yellow-500",
-  };
-
-  return (
-    <span
-      className={`px-3 py-1 rounded-full text-white text-xs ${map[risk] || "bg-gray-400"}`}
-    >
-      {risk}
-    </span>
   );
 }
 

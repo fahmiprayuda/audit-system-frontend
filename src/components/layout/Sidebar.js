@@ -5,106 +5,122 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FolderKanban,
+  ClipboardList,
   Building2,
   BarChart3,
 } from "lucide-react";
 
-
 export default function Sidebar() {
-
   const pathname = usePathname();
 
   const menu = [
-
     {
       name: "Dashboard",
       path: "/",
       icon: LayoutDashboard,
     },
-
-    {
-      name: "Monitoring Findings",
-      path: "/findings",
-      icon: FolderKanban,
-    },
-    
     {
       name: "Audit Projects",
       path: "/projects",
       icon: FolderKanban,
     },
-
-    
+    {
+      name: "Monitoring Findings",
+      path: "/findings",
+      icon: ClipboardList,
+    },
     {
       name: "Departments",
       path: "/departments",
       icon: Building2,
     },
-
     {
       name: "Reports",
       path: "/reports",
       icon: BarChart3,
     },
-
   ];
 
+  const isActive = (itemPath) => {
+    const isFindingDetail = pathname.startsWith("/findings/");
+
+    if (itemPath === "/projects") {
+      return pathname.startsWith("/projects") || isFindingDetail;
+    }
+
+    if (itemPath === "/") {
+      return pathname === "/";
+    }
+
+    return pathname.startsWith(itemPath);
+  };
+
   return (
-
-    <div className="w-64 bg-white border-r min-h-screen flex flex-col">
-
-      {/* Logo */}
-
-      <div className="p-6 border-b">
-
-        <h1 className="font-bold text-lg">
-          Audit System
+    <aside
+      className="
+        group fixed left-0 top-0 h-screen
+        w-20 hover:w-72
+        bg-white/5
+        backdrop-blur-xl
+        border-r border-white/20
+        text-slate-800
+        transition-all duration-500 ease-out
+        z-50 overflow-hidden
+        shadow-[0_8px_32px_rgba(0,0,0,0.12)]
+      "
+    >
+      {/* HEADER */}
+      <div className="h-20 flex items-center px-6 border-b border-white/20">
+        <h1 className="text-xl font-bold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300 text-slate-900">
+          AuditFlow
         </h1>
-
-        <p className="text-xs text-gray-400">
-          Internal Audit
-        </p>
-
       </div>
 
-      {/* Menu */}
-
-      <div className="flex flex-col p-4 gap-1">
-
+      {/* MENU */}
+      <div className="p-4 space-y-2">
         {menu.map((item) => {
-
           const Icon = item.icon;
-
-          const active = pathname.startsWith(item.path);
+          const active = isActive(item.path);
 
           return (
-
             <Link
               key={item.path}
               href={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition
-                ${
-                  active
-                    ? "bg-blue-50 text-blue-600 font-medium"
-                    : "text-gray-600 hover:bg-gray-100"
+              className={`
+                relative flex items-center gap-4 px-4 py-3 rounded-2xl
+                transition-all duration-300
+                ${active
+                  ? "bg-white/60 text-blue-700 shadow-sm"
+                  : "text-slate-600 hover:bg-white/40 hover:text-slate-900"
                 }
               `}
             >
+              {active && (
+                <div className="absolute left-0 top-2 bottom-2 w-1 bg-blue-500 rounded-r-full" />
+              )}
 
-              <Icon size={18} />
+              <Icon size={20} className="shrink-0" />
 
-              {item.name}
-
+              <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-all duration-300">
+                {item.name}
+              </span>
             </Link>
-
           );
-
         })}
-
       </div>
 
-    </div>
+      {/* FOOTER */}
+      <div className="absolute bottom-4 left-0 w-full px-4">
+        <div className="bg-white/40 backdrop-blur-md rounded-2xl p-4 opacity-0 group-hover:opacity-100 transition-all duration-300 border border-white/30">
+          <p className="text-sm font-semibold text-slate-900">
+            Nur Aulia Rahmawati
+          </p>
 
+          <p className="text-xs text-slate-600">
+            Internal Auditor
+          </p>
+        </div>
+      </div>
+    </aside>
   );
-
 }

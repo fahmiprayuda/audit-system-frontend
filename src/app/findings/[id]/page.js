@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import api from "@/lib/axios";
+import StatusBadge from "@/components/badges/StatusBadge";
+import RiskBadge from "@/components/badges/RiskBadge";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import ActionPlanCard from "@/components/ActionPlanCard";
+import { formatDate } from "@/utils/date";
+import useFindingDetail from "@/hooks/useFindingDetail";
+import useActionPlan from "@/hooks/useActionPlan";
+
 
 export default function FindingDetailPage() {
+
+  //const userRole = "auditor"; // hardcoded for testing, should be from auth context or similar
+  const userRole = "auditee"; // hardcoded for testing, should be from auth context or similar
+
+
 
   const { id } = useParams();
   const searchParams = useSearchParams();
@@ -12,118 +25,40 @@ export default function FindingDetailPage() {
 
   const fdId = searchParams.get("fd");
 
-  const [finding, setFinding] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { handleCreatePlan } = useActionPlan();
 
-  const [comments, setComments] = useState({});
-  const [rejectComments, setRejectComments] = useState({});
-  const [showReject, setShowReject] = useState(null);
+  const {
+    finding,
+    loading,
 
-  const [showModal, setShowModal] = useState(false);
-  const [newPlan, setNewPlan] = useState({
-    root_cause: "",
-    corrective_action: "",
-    target_date: "",
-  });
+    expandedPlan,
+    setExpandedPlan,
 
-  /* ================= FETCH ================= */
+    comments,
+    setComments,
 
-  const fetchFinding = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get(`/findings/${id}`);
-      setFinding(res?.data || null);
-    } catch (err) {
-      console.error(err);
-      alert("Failed load");
-    } finally {
-      setLoading(false);
-    }
-  };
+    rejectComments,
+    setRejectComments,
 
-  useEffect(() => {
-    if (id) fetchFinding();
-  }, [id]);
+    files,
+    setFiles,
 
-  /* ================= ACTION ================= */
+    showReject,
+    setShowReject,
 
-  const handleSubmit = async (ap) => {
-    try {
-      await api.post(`/action-plans/${ap.id}/submit`, {
-        auditee_comment: comments[ap.id] || ""
-      });
+    showModal,
+    setShowModal,
 
-      setComments(prev => ({ ...prev, [ap.id]: "" }));
-      fetchFinding();
+    newPlan,
+    setNewPlan,
 
-    } catch (err) {
-      console.error(err);
-      alert("Submit gagal");
-    }
-  };
+    handleSubmit,
+    handleSubmitRevision,
+    handleAction,
 
-  const handleReject = async (id) => {
-    try {
-      await api.post(`/action-plans/${id}/reject`, {
-        comment: rejectComments[id]
-      });
+    fetchFinding,
 
-      setShowReject(null);
-      fetchFinding();
-
-    } catch (err) {
-      console.error(err);
-      alert("Reject gagal");
-    }
-  };
-
-  const handleAction = async (type, id) => {
-    try {
-      await api.post(`/action-plans/${id}/${type}`);
-      fetchFinding();
-    } catch (err) {
-      console.error(err);
-      alert("Failed");
-    }
-  };
-
-  const handleCreatePlan = async () => {
-
-    if (!fdId) {
-      alert("Pilih department dulu bro");
-      return;
-    }
-
-    if (!newPlan.corrective_action.trim()) {
-      alert("Corrective action wajib diisi");
-      return;
-    }
-
-    try {
-
-      await api.post("/action-plans", {
-        root_cause: newPlan.root_cause || null,
-        corrective_action: newPlan.corrective_action,
-        target_date: newPlan.target_date || null,
-        finding_department_id: Number(fdId),
-        status: "draft"
-      });
-
-      setShowModal(false);
-
-      setNewPlan({
-        root_cause: "",
-        corrective_action: "",
-        target_date: ""
-      });
-
-      fetchFinding();
-
-    } catch (err) {
-      console.error("CREATE ERROR:", err.response?.data);
-      alert("Create gagal");
-    }
-  };
+  } = useFindingDetail(id, fdId);
 
   if (loading) return <p className="p-10">Loading...</p>;
   if (!finding) return <p className="p-10">Not found</p>;
@@ -135,25 +70,60 @@ export default function FindingDetailPage() {
     : departments;
 
   return (
-    <div className="p-10 bg-gray-100 min-h-screen">
+    <div className="min-h-screen bg-[#f6f7fb] px-10 py-8">
 
       {/* HEADER */}
-      <div className="flex justify-between mb-6">
-        <h1 className="text-2xl font-bold">{finding.finding_code}</h1>
-        <button onClick={() => router.back()} className="bg-gray-300 px-3 py-1 rounded">
-          Back
+      <div className="flex justify-between items-center mb-10">
+        <div className="flex items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            {finding.finding_code}
+          </h1>
+
+          <StatusBadge status={finding.status} />
+        </div>
+
+        <button
+          onClick={() => router.back()}
+          className="border border-slate-300 px-6 py-3 rounded-2xl bg-white hover:bg-slate-50"
+        >
+          ← Back
         </button>
       </div>
 
       {/* INFO */}
-      <div className="bg-white p-6 rounded-xl mb-6">
-        <h2 className="text-lg font-semibold">{finding.title}</h2>
-        <p className="text-gray-500">{finding.description}</p>
+      <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm mb-10">
+        <h2 className="text-2xl font-semibold text-slate-900">
+          {finding.title}
+        </h2>
 
-        <div className="mt-3 flex gap-4 items-center">
-          <span>Risk: {finding.risk_rating}</span>
-          <span>Due: {formatDate(finding.due_date)}</span>
-          <StatusBadge status={finding.status} />
+        <p className="text-slate-500 mt-2">
+          {finding.description}
+        </p>
+
+        <div className="flex gap-8 mt-8 items-center">
+          <span className="text-slate-500">
+            Risk:
+          </span>
+
+          <RiskBadge risk={finding.risk_rating} />
+
+          <span className="text-slate-500">
+            Due:
+          </span>
+
+          <span className="font-semibold">
+            {formatDate(finding.due_date)}
+          </span>
+
+          {fdId && (
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-blue-600 text-white px-3 py-1 rounded text-right ml-auto"
+            >
+              + Add Action Plan
+            </button>
+          )}
+
         </div>
       </div>
 
@@ -161,17 +131,15 @@ export default function FindingDetailPage() {
 
       <div className="bg-white p-6 rounded-xl">
 
-        <div className="flex justify-between mb-4 items-center">
-          <h2 className="font-semibold">Departments & Action Plans</h2>
 
-          {fdId && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="bg-blue-600 text-white px-3 py-1 rounded"
-            >
-              + Add Action Plan
-            </button>
-          )}
+        <div className="flex items-center gap-4 mb-10">
+          <div className="flex-1 h-px bg-slate-200"></div>
+
+          <h1 className="font-semibold text-3xl text-slate-500">
+            Departments & Action Plans
+          </h1>
+
+          <div className="flex-1 h-px bg-slate-200"></div>
         </div>
 
         {filteredDepartments.map(fd => {
@@ -179,123 +147,46 @@ export default function FindingDetailPage() {
           const plans = fd.action_plans || [];
 
           return (
-            <div key={fd.finding_department_id} className="mb-6">
+            <div
+              key={fd.finding_department_id}
+              className="mb-10 bg-slate-50 border border-slate-200 rounded-3xl p-6 shadow-sm"
+            >
 
-              <h3 className="font-semibold">{fd.name}</h3>
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+                <div>
+                  <h3 className="text-2xl font-bold text-slate-800">
+                    {fd.name}
+                  </h3>
 
-              <div className="space-y-4 mt-3">
-
-                {plans.map(ap => (
-                  <div key={ap.id} className="border p-4 rounded bg-white">
-
-                    <p><b>Root Cause:</b> {ap.root_cause || "-"}</p>
-                    <p><b>Action:</b> {ap.corrective_action}</p>
-
-                    {/* CHAT */}
-                    <div className="mt-3 space-y-2">
-                      {(ap.comments || []).map((c, i) => (
-                        <div
-                          key={i}
-                          className={`p-2 rounded text-xs max-w-[70%] ${c.role === "auditor"
-                            ? "bg-red-100"
-                            : "bg-blue-100 ml-auto"
-                            }`}
-                        >
-                          <b>{c.role}</b>
-                          <p>{c.message}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* INPUT */}
-                    {(ap.status === "draft" || ap.status === "need_revision") && (
-                      <textarea
-                        className="w-full border mt-2 p-2"
-                        placeholder="comment..."
-                        value={comments[ap.id] || ""}
-                        onChange={(e) =>
-                          setComments(prev => ({
-                            ...prev,
-                            [ap.id]: e.target.value
-                          }))
-                        }
-                      />
-                    )}
-
-                    {/* REJECT */}
-                    {showReject === ap.id && (
-                      <div className="mt-2 bg-red-50 p-2 rounded">
-                        <textarea
-                          className="w-full border p-2"
-                          placeholder="reason..."
-                          value={rejectComments[ap.id] || ""}
-                          onChange={(e) =>
-                            setRejectComments(prev => ({
-                              ...prev,
-                              [ap.id]: e.target.value
-                            }))
-                          }
-                        />
-
-                        <button
-                          onClick={() => handleReject(ap.id)}
-                          className="bg-red-600 text-white px-3 py-1 mt-2 rounded"
-                        >
-                          Submit Revision
-                        </button>
-                      </div>
-                    )}
-
-                    {/* ACTION */}
-                    <div className="flex gap-2 mt-3 items-center flex-wrap">
-
-                      <StatusBadge status={ap.status || "draft"} />
-
-                      {(ap.status === "draft" || ap.status === "need_revision") && (
-                        <button
-                          onClick={() => handleSubmit(ap)}
-                          className="bg-blue-600 text-white px-3 py-1 rounded"
-                        >
-                          Submit
-                        </button>
-                      )}
-
-                      {ap.status === "submitted" && (
-                        <>
-                          <button
-                            onClick={() => handleAction("approve", ap.id)}
-                            className="bg-blue-600 text-white px-3 py-1 rounded"
-                          >
-                            Approve
-                          </button>
-
-                          <button
-                            onClick={() =>
-                              setShowReject(showReject === ap.id ? null : ap.id)
-                            }
-                            className="bg-red-500 text-white px-3 py-1 rounded"
-                          >
-                            Revision
-                          </button>
-                        </>
-                      )}
-
-                      {ap.status === "done" && (
-                        <button
-                          onClick={() => handleAction("verify", ap.id)}
-                          className="bg-green-600 text-white px-3 py-1 rounded"
-                        >
-                          Verify
-                        </button>
-                      )}
-
-                    </div>
-
-                  </div>
-                ))}
+                  <p className="text-sm text-slate-500 mt-1">
+                    {plans.length} Action Plan
+                  </p>
+                </div>
 
               </div>
 
+              <div className="space-y-2">
+                {plans.map(ap => (
+                  <ActionPlanCard
+                    key={ap.id}
+                    ap={ap}
+                    expandedPlan={expandedPlan}
+                    setExpandedPlan={setExpandedPlan}
+                    comments={comments}
+                    setComments={setComments}
+                    rejectComments={rejectComments}
+                    setRejectComments={setRejectComments}
+                    files={files}
+                    setFiles={setFiles}
+                    handleSubmit={handleSubmit}
+                    handleAction={handleAction}
+                    handleSubmitRevision={handleSubmitRevision}
+                    showReject={showReject}
+                    setShowReject={setShowReject}
+                    userRole={userRole}
+                  />
+                ))}
+              </div>
             </div>
           );
         })}
@@ -303,82 +194,111 @@ export default function FindingDetailPage() {
 
       {/* ================= MODAL ================= */}
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+      {
+        showModal && (
+          <div
+            onClick={() => setShowModal(false)}
+            className="fixed inset-0 bg-black/40 flex items-center justify-center">
 
-          <div className="bg-white p-6 rounded w-[400px]">
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl p-8 w-[500px] shadow-2xl border border-slate-200">
 
-            <h3 className="mb-3 font-semibold">Add Action Plan</h3>
 
-            <textarea
-              placeholder="Root Cause"
-              className="w-full border p-2 mb-2"
-              value={newPlan.root_cause}
-              onChange={(e) =>
-                setNewPlan({ ...newPlan, root_cause: e.target.value })
-              }
-            />
+              <h3 className="mb-3 font-semibold">Add Action Plan</h3>
 
-            <textarea
-              placeholder="Corrective Action"
-              className="w-full border p-2 mb-2"
-              value={newPlan.corrective_action}
-              onChange={(e) =>
-                setNewPlan({ ...newPlan, corrective_action: e.target.value })
-              }
-            />
+              <label className="mt-6 block text-sm font-medium">
+                Root Cause <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                placeholder="Root Cause"
+                className="w-full border p-2 mb-2"
+                value={newPlan.root_cause}
+                onChange={(e) =>
+                  setNewPlan({ ...newPlan, root_cause: e.target.value })
+                }
+              />
 
-            <input
-              type="date"
-              className="w-full border p-2 mb-2"
-              value={newPlan.target_date}
-              onChange={(e) =>
-                setNewPlan({ ...newPlan, target_date: e.target.value })
-              }
-            />
+              <label className="block text-sm font-medium">
+                Corrective Action <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                placeholder="Corrective Action"
+                className="w-full border p-2 mb-2"
+                value={newPlan.corrective_action}
+                onChange={(e) =>
+                  setNewPlan({ ...newPlan, corrective_action: e.target.value })
+                }
+              />
 
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)}>Cancel</button>
-              <button
-                onClick={handleCreatePlan}
-                className="bg-blue-600 text-white px-3 py-1 rounded"
-              >
-                Save
-              </button>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Timeline
+                </label>
+
+                <DatePicker
+                  selectsRange
+                  startDate={newPlan.start_date}
+                  endDate={newPlan.target_date}
+                  onChange={(dates) => {
+                    const [start, end] = dates;
+
+                    setNewPlan((prev) => ({
+                      ...prev,
+                      start_date: start,
+                      target_date: end,
+                    }));
+                  }}
+                  isClearable
+                  monthsShown={2}
+                  dateFormat="dd MMM yyyy"
+                  placeholderText="Select timeline"
+                  wrapperClassName="w-full"
+                  className="w-full border border-slate-300 px-4 py-3 rounded-xl"
+                />
+
+              </div>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="border px-3 py-1 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+
+                    const success = await handleCreatePlan(newPlan);
+
+                    if (!success) return;
+
+                    alert("Action Plan berhasil dibuat");
+
+                    await fetchFinding();
+
+                    setShowModal(false);
+
+                    setNewPlan({
+                      finding_department_id: fdId || "",
+                      root_cause: "",
+                      corrective_action: "",
+                      start_date: null,
+                      target_date: null,
+                    });
+
+                  }}
+                  className="bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                  Save
+                </button>
+              </div>
+
             </div>
-
           </div>
-        </div>
-      )}
+        )
+      }
 
-    </div>
+    </div >
   );
-}
-
-/* ================= STATUS ================= */
-
-function StatusBadge({ status }) {
-
-  const map = {
-    draft: "bg-gray-500",
-    submitted: "bg-blue-400",
-    approved: "bg-purple-500",
-    in_progress: "bg-yellow-500",
-    done: "bg-green-500",
-    verified: "bg-green-700",
-    need_revision: "bg-red-600",
-  };
-
-  return (
-    <span className={`px-2 py-1 text-white text-xs rounded ${map[status] || "bg-gray-400"}`}>
-      {status ? status.replaceAll("_", " ") : "-"}
-    </span>
-  );
-}
-
-/* ================= DATE ================= */
-
-function formatDate(date) {
-  if (!date) return "-";
-  return new Date(date).toLocaleDateString("en-GB");
 }
