@@ -14,6 +14,7 @@ export default function CreateFindingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [risk, setRisk] = useState("Moderate");
+  const [startDate, setStartDate] = useState(null);
 
   const [departments, setDepartments] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
@@ -106,29 +107,39 @@ export default function CreateFindingPage() {
       }
     }
 
+    if (!startDate) {
+      return alert("Finding date wajib diisi");
+    }
+
     setLoading(true);
 
     try {
 
       const payload = {
         audit_project_id: Number(id),
+
         title,
         description,
         risk_rating: risk,
+
+        start_date: formatDate(startDate),
 
         departments: selectedDepartments.map(Number),
 
         action_plans: selectedDepartments.map((deptId) => ({
           department_id: Number(deptId),
-          root_cause: actionPlans[deptId]?.root_cause || "",
-          corrective_action: actionPlans[deptId]?.corrective_action || "",
-          start_date: actionPlans[deptId]?.start_date
-            ? actionPlans[deptId].start_date.toISOString().split("T")[0]
-            : null,
 
-          target_date: actionPlans[deptId]?.target_date
-            ? actionPlans[deptId].target_date.toISOString().split("T")[0]
-            : null,
+          root_cause: actionPlans[deptId]?.root_cause || "",
+
+          corrective_action: actionPlans[deptId]?.corrective_action || "",
+
+          start_date: formatDate(
+            actionPlans[deptId]?.start_date
+          ),
+
+          target_date: formatDate(
+            actionPlans[deptId]?.target_date
+          ),
         })),
       };
 
@@ -183,6 +194,17 @@ export default function CreateFindingPage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="w-full border px-3 py-2 rounded"
+        />
+
+        {/* FINDING DATE */}
+        <DatePicker
+          selected={startDate}
+          onChange={(date) => setStartDate(date)}
+          dateFormat="dd/MM/yyyy"
+          placeholderText="Select finding start date"
+          className="w-full border px-3 py-2 rounded"
+          wrapperClassName="w-full"
+          required
         />
 
         {/* RISK */}
@@ -295,11 +317,23 @@ export default function CreateFindingPage() {
           disabled={loading}
           className="bg-blue-600 text-white px-6 py-2 rounded"
         >
-          {loading ? "Creating..." : "Create Finding"}
+          {loading ? "Creating..." : "Create Finding & Action Plans"}
         </button>
 
       </form>
 
     </div>
   );
+}
+
+function formatDate(date) {
+  if (!date) return null;
+
+  const d = new Date(date);
+
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }

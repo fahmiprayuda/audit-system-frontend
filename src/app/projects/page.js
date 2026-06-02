@@ -14,6 +14,9 @@ export default function ProjectsPage() {
   const [showModal, setShowModal] = useState(false);
 
   const [projects, setProjects] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
@@ -24,26 +27,30 @@ export default function ProjectsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   // ================= FETCH =================
-  const fetchProjects = async () => {
+  useEffect(() => {
+    fetchProjects(currentPage);
+  }, [currentPage]);
+
+  const fetchProjects = async (page = 1) => {
     try {
+      setLoading(true);
 
-      const res = await api.get("/projects");
+      const res = await api.get(
+        `/projects?page=${page}&per_page=10`
+      );
 
-      setProjects(res.data);
+      setProjects(res.data.data || []);
+      setCurrentPage(res.data.current_page);
+      setLastPage(res.data.last_page);
 
     } catch (err) {
-
       console.error(err);
+      alert("Failed to load projects");
 
     } finally {
-
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   // ================= DELETE =================
   const deleteProject = async (projectId) => {
@@ -97,7 +104,7 @@ export default function ProjectsPage() {
         start_date: startDate || null,
       });
 
-      await fetchProjects();
+      await fetchProjects(currentPage);
 
       alert("Project created successfully 🚀");
 
@@ -121,6 +128,7 @@ export default function ProjectsPage() {
       setSubmitting(false);
     }
   };
+
 
   // ================= LOADING =================
   if (loading) {
@@ -216,9 +224,12 @@ export default function ProjectsPage() {
                       e.stopPropagation();
                       deleteProject(project.id);
                     }}
-                    className="text-red-500 text-sm"
+                    className="flex items-center gap-1 px-3 py-1 rounded-md
+             text-red-600 text-sm font-medium
+             hover:bg-red-50 hover:text-red-700
+             transition"
                   >
-                    Delete
+                    🗑 Delete
                   </button>
 
                 </td>
@@ -230,6 +241,31 @@ export default function ProjectsPage() {
           </tbody>
 
         </table>
+
+      </div>
+
+      {/* PAGINATION */}
+      <div className="flex justify-center items-center gap-3 mt-4">
+
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((p) => p - 1)}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Prev
+        </button>
+
+        <span className="text-sm">
+          Page {currentPage} of {lastPage}
+        </span>
+
+        <button
+          disabled={currentPage === lastPage}
+          onClick={() => setCurrentPage((p) => p + 1)}
+          className="px-3 py-1 border rounded disabled:opacity-50"
+        >
+          Next
+        </button>
 
       </div>
 
@@ -340,13 +376,27 @@ export default function ProjectsPage() {
 /* ================= DATE ================= */
 
 function formatDate(date) {
-
   if (!date) return "-";
 
-  return new Date(date).toLocaleDateString("en-GB", {
+  // kalau string dari DB: YYYY-MM-DD
+  if (typeof date === "string") {
+    const [year, month, day] = date.split("-");
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    ).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  // kalau Date object
+  return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
-    year: "numeric"
+    year: "numeric",
   });
-
 }

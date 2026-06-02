@@ -8,11 +8,13 @@ export default function EditFindingPage() {
   const { id } = useParams();
   const router = useRouter();
 
+  const [departments, setDepartments] = useState([]);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
     risk_rating: "",
-    due_date: ""
+    start_date: ""
   });
 
   const [loading, setLoading] = useState(true);
@@ -21,14 +23,22 @@ export default function EditFindingPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await api.get(`/findings/${id}`);
+        const [findingRes, deptRes] = await Promise.all([
+          api.get(`/findings/${id}`),
+          api.get("/departments"),
+        ]);
+
+        const finding = findingRes.data;
+
+        setDepartments(deptRes.data || []);
 
         setForm({
-          title: res.data.title,
-          description: res.data.description,
-          risk_rating: res.data.risk_rating,
-          due_date: res.data.due_date || ""
+          title: finding.title,
+          description: finding.description,
+          risk_rating: finding.risk_rating,
+          start_date: finding.start_date || "",
         });
+
 
       } catch (err) {
         console.error(err);
@@ -40,6 +50,8 @@ export default function EditFindingPage() {
 
     fetchData();
   }, [id]);
+
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,21 +81,21 @@ export default function EditFindingPage() {
 
         <input
           value={form.title}
-          onChange={(e) => setForm({...form, title: e.target.value})}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
           className="w-full border p-2 rounded"
         />
 
         <textarea
-        value={form.description || ""}
-        onChange={(e) =>
+          value={form.description || ""}
+          onChange={(e) =>
             setForm({ ...form, description: e.target.value })
-        }
-        className="w-full border p-2 rounded"
+          }
+          className="w-full border p-2 rounded"
         />
 
         <select
           value={form.risk_rating}
-          onChange={(e) => setForm({...form, risk_rating: e.target.value})}
+          onChange={(e) => setForm({ ...form, risk_rating: e.target.value })}
           className="w-full border p-2 rounded"
         >
           <option value="Extreme">Extreme</option>
@@ -93,8 +105,8 @@ export default function EditFindingPage() {
 
         <input
           type="date"
-          value={form.due_date || ""}
-          onChange={(e) => setForm({...form, due_date: e.target.value})}
+          value={form.start_date || ""}
+          onChange={(e) => setForm({ ...form, start_date: e.target.value })}
           className="w-full border p-2 rounded"
         />
 

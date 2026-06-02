@@ -122,6 +122,25 @@ export default function ProjectPage() {
     }
   };
 
+  const deleteFinding = async (id) => {
+    const ok = confirm(
+      "Delete this finding? Related action plans will also be removed."
+    );
+
+    if (!ok) return;
+
+    try {
+      await api.delete(`/findings/${id}`);
+
+      await fetchData();
+
+      alert("Finding deleted 🔥");
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed");
+    }
+  };
+
   // ================= SUMMARY =================
   const allDepartments = findings.flatMap(f => f.departments || []);
   const allAP = allDepartments.flatMap(d => d.action_plans || []);
@@ -195,7 +214,7 @@ export default function ProjectPage() {
               <th className="p-4">Department</th>
               <th className="p-4">Risk</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Due</th>
+              <th className="p-4">Start Date</th>
               <th className="p-4">Action</th>
             </tr>
           </thead>
@@ -231,7 +250,8 @@ export default function ProjectPage() {
                     </td>
 
                     <td className="p-4">
-                      {formatDate(finding.due_date)}
+                      {console.log("start_date:", finding.start_date)}
+                      {formatDate(finding.start_date)}
                     </td>
 
                     <td className="p-4 flex gap-2">
@@ -249,13 +269,15 @@ export default function ProjectPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            deleteDepartment(fdId);
+                            deleteFinding(finding.id);
                           }}
                           className="text-red-500 text-sm"
                         >
                           Delete
                         </button>
                       )}
+
+
                     </td>
 
                   </tr>
@@ -388,9 +410,25 @@ function Card({ title, value }) {
 function formatDate(date) {
   if (!date) return "-";
 
-  return new Date(date).toLocaleDateString("en-GB", {
+  // kalau string dari DB: YYYY-MM-DD
+  if (typeof date === "string") {
+    const [year, month, day] = date.split("-");
+
+    return new Date(
+      Number(year),
+      Number(month) - 1,
+      Number(day)
+    ).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+
+  // kalau Date object
+  return date.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
-    year: "numeric"
+    year: "numeric",
   });
 }

@@ -169,7 +169,6 @@ export default function FindingsPage() {
               <th className="p-4">Department</th>
               <th className="p-4">Risk</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Due</th>
             </tr>
           </thead>
 
@@ -225,17 +224,6 @@ export default function FindingsPage() {
                   {/* STATUS */}
                   <td className="p-4">
                     <StatusBadge status={finding.status} />
-                  </td>
-
-                  {/* DUE */}
-                  <td className="p-4">
-                    {formatDate(finding.due_date)}
-
-                    {isOverdue && (
-                      <span className="ml-2 text-red-600 font-bold">
-                        🔴
-                      </span>
-                    )}
                   </td>
 
                 </tr>

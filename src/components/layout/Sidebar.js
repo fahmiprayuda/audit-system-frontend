@@ -16,7 +16,7 @@ export default function Sidebar() {
   const menu = [
     {
       name: "Dashboard",
-      path: "/",
+      path: "/dashboard",
       icon: LayoutDashboard,
     },
     {

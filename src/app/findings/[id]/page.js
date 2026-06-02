@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import StatusBadge from "@/components/badges/StatusBadge";
 import RiskBadge from "@/components/badges/RiskBadge";
@@ -14,8 +13,8 @@ import useActionPlan from "@/hooks/useActionPlan";
 
 export default function FindingDetailPage() {
 
-  //const userRole = "auditor"; // hardcoded for testing, should be from auth context or similar
-  const userRole = "auditee"; // hardcoded for testing, should be from auth context or similar
+  const userRole = "auditor"; // hardcoded for testing, should be from auth context or similar
+  //const userRole = "auditee"; // hardcoded for testing, should be from auth context or similar
 
 
 
@@ -108,11 +107,11 @@ export default function FindingDetailPage() {
           <RiskBadge risk={finding.risk_rating} />
 
           <span className="text-slate-500">
-            Due:
+            Start Date:
           </span>
 
           <span className="font-semibold">
-            {formatDate(finding.due_date)}
+            {formatDate(finding.start_date)}
           </span>
 
           {fdId && (
