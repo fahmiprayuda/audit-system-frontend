@@ -1,3 +1,4 @@
+// src/lib/axios.js
 import axios from "axios";
 
 const api = axios.create({
@@ -7,31 +8,31 @@ const api = axios.create({
   },
 });
 
-// 🔥 DEBUG REQUEST
 api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
 
-  const token = localStorage.getItem("token");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
 
-  console.log("➡️ REQUEST:", config.baseURL + config.url, config.data || "");
   return config;
 });
 
-// 🔥 DEBUG RESPONSE
 api.interceptors.response.use(
-  (response) => {
-    console.log("✅ RESPONSE:", response.config.url, response.data);
-    return response;
-  },
-  (error) => {
-    console.error("❌ ERROR:", error.response?.data || error.message);
-    return Promise.reject(error);
+  (res) => res,
+  (err) => {
+    if (
+      err.response?.status === 401 &&
+      typeof window !== "undefined"
+    ) {
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
+
+    return Promise.reject(err);
   }
-
-
 );
 
 export default api;

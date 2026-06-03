@@ -1,0 +1,146 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import api from "@/lib/axios";
+
+export default function MyTasksPage() {
+
+    const [data, setData] = useState(null);
+
+    const fetchTasks = async () => {
+        try {
+            const res = await api.get("/my-tasks");
+
+            setData(res.data);
+
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    useEffect(() => {
+        fetchTasks();
+    }, []);
+
+    if (!data)
+        return <p>Loading...</p>;
+
+    return (
+        <div className="p-8">
+
+            <h1 className="text-3xl font-bold mb-8">
+                My Tasks
+            </h1>
+
+            {/* SUMMARY */}
+
+            <div className="grid grid-cols-5 gap-4 mb-8">
+
+                <Card
+                    title="Total"
+                    value={data.summary.total}
+                />
+
+                <Card
+                    title="Draft"
+                    value={data.summary.draft}
+                />
+
+                <Card
+                    title="Submitted"
+                    value={data.summary.submitted}
+                />
+
+                <Card
+                    title="Need Revision"
+                    value={data.summary.need_revision}
+                />
+
+                <Card
+                    title="Approved"
+                    value={data.summary.approved}
+                />
+
+            </div>
+
+            {/* TABLE */}
+
+            <div className="bg-white rounded-xl shadow overflow-hidden">
+
+                <table className="w-full">
+
+                    <thead className="bg-slate-100">
+
+                        <tr>
+                            <th className="p-4 text-left">
+                                Finding
+                            </th>
+
+                            <th className="p-4 text-left">
+                                Corrective Action
+                            </th>
+
+                            <th className="p-4 text-left">
+                                Status
+                            </th>
+
+                            <th className="p-4 text-left">
+                                Target Date
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {data.tasks.map(task => (
+
+                            <tr
+                                key={task.id}
+                                className="border-t"
+                            >
+
+                                <td className="p-4">
+                                    {task.finding_department?.finding?.title}
+                                </td>
+
+                                <td className="p-4">
+                                    {task.corrective_action}
+                                </td>
+
+                                <td className="p-4">
+                                    {task.status}
+                                </td>
+
+                                <td className="p-4">
+                                    {task.target_date}
+                                </td>
+
+                            </tr>
+
+                        ))}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+    );
+}
+
+function Card({ title, value }) {
+    return (
+        <div className="bg-white p-6 rounded-xl shadow">
+            <p className="text-gray-500 text-sm">
+                {title}
+            </p>
+
+            <h2 className="text-3xl font-bold">
+                {value}
+            </h2>
+        </div>
+    );
+}

@@ -7,13 +7,19 @@ import { useRouter } from "next/navigation";
 export default function LoginPage() {
     const router = useRouter();
 
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [email, setEmail] =
+        useState("");
+
+    const [password, setPassword] =
+        useState("");
+
+    const [loading, setLoading] =
+        useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
 
-        console.log("submit login");
+        setLoading(true);
 
         try {
             const res = await api.post("/login", {
@@ -21,51 +27,75 @@ export default function LoginPage() {
                 password,
             });
 
-            console.log("SUCCESS", res.data);
+            const token = res.data.token;
 
-            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("token", token);
 
-            router.push("/projects");
+            localStorage.setItem(
+                "user",
+                JSON.stringify(res.data.user)
+            );
+
+            document.cookie = `token=${token}; path=/`;
+            document.cookie =
+                `role=${res.data.user.role}; path=/`;
+
+            if (res.data.user.role === "auditee") {
+                router.push("/my-tasks");
+            } else {
+                router.push("/projects");
+            }
 
         } catch (err) {
-            console.log("ERR FULL:", err);
-            console.log("ERR RESPONSE:", err.response);
-            console.log("ERR REQUEST:", err.request);
-            console.log("ERR MESSAGE:", err.message);
-
+            console.error(err);
             alert("Login gagal");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="container mt-5">
-            <h2>Login</h2>
+        <div className="min-h-screen flex items-center justify-center bg-slate-100">
+            <div className="bg-white rounded-xl shadow p-8 w-full max-w-md">
+                <h2 className="text-2xl font-semibold mb-6 text-center">
+                    Audit System Login
+                </h2>
 
-            <form onSubmit={handleLogin}>
+                <form
+                    onSubmit={handleLogin}
+                    className="space-y-4"
+                >
+                    <input
+                        className="w-full border rounded-lg px-4 py-2"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) =>
+                            setEmail(e.target.value)
+                        }
+                    />
 
-                <input
-                    className="form-control mb-3"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) =>
-                        setEmail(e.target.value)
-                    }
-                />
+                    <input
+                        type="password"
+                        className="w-full border rounded-lg px-4 py-2"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) =>
+                            setPassword(
+                                e.target.value
+                            )
+                        }
+                    />
 
-                <input
-                    type="password"
-                    className="form-control mb-3"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) =>
-                        setPassword(e.target.value)
-                    }
-                />
-
-                <button className="btn btn-primary">
-                    Login
-                </button>
-            </form>
+                    <button
+                        disabled={loading}
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+                    >
+                        {loading
+                            ? "Logging in..."
+                            : "Login"}
+                    </button>
+                </form>
+            </div>
         </div>
     );
 }

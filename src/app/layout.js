@@ -1,36 +1,39 @@
+"use client";
+
 import "./globals.css";
-import { Montserrat_Alternates, KoHo } from "next/font/google";
+import { usePathname } from "next/navigation";
+
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
+import AuthGuard from "@/components/auth/AuthGuard";
 
-const heading = Montserrat_Alternates({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  variable: "--font-heading",
-});
+export default function RootLayout({
+  children,
+}) {
+  const pathname =
+    usePathname();
 
-const body = KoHo({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-body",
-});
+  const isLogin =
+    pathname === "/login";
 
-export const metadata = {
-  title: "Monitoring Dashboard Audit",
-  description: "Monitoring dashboard audit system",
-};
-
-export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${heading.variable} ${body.variable}`}>
-      <body className="font-body bg-[#f8fafc] text-gray-900">
-        <Topbar />
+    <html lang="en">
+      <body className="bg-[#f8fafc]">
+        {!isLogin && <Topbar />}
 
         <div>
-          <Sidebar />
+          {!isLogin && <Sidebar />}
 
-          <main className="flex-1 ml-20 p-6 min-h-screen transition-all duration-300">
+          <main
+            className={
+              isLogin
+                ? ""
+                : "ml-20 p-6 min-h-screen"
+            }
+          >
+            <AuthGuard />
             {children}
+            <AuthGuard />
           </main>
         </div>
       </body>
