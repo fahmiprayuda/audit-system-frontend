@@ -24,7 +24,7 @@ export default function ActionPlanCard({ ap,
   showReject,
   setShowReject, }) {
 
-  const user = getUser()?.role;
+  const user = getUser();
 
   const actions = STATUS_FLOW[ap.status] || [];
 
