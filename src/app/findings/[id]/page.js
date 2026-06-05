@@ -9,14 +9,16 @@ import ActionPlanCard from "@/components/ActionPlanCard";
 import { formatDate } from "@/utils/date";
 import useFindingDetail from "@/hooks/useFindingDetail";
 import useActionPlan from "@/hooks/useActionPlan";
+import { getUser, canManageActionPlan } from "@/utils/auth";
 
 
 export default function FindingDetailPage() {
 
-  const userRole = "auditor"; // hardcoded for testing, should be from auth context or similar
+  //const userRole = "auditor"; // hardcoded for testing, should be from auth context or similar
   //const userRole = "auditee"; // hardcoded for testing, should be from auth context or similar
 
-
+  const user = getUser();
+  const canCreateActionPlan = canManageActionPlan();
 
   const { id } = useParams();
   const searchParams = useSearchParams();
@@ -114,7 +116,7 @@ export default function FindingDetailPage() {
             {formatDate(finding.start_date)}
           </span>
 
-          {fdId && (
+          {fdId && canCreateActionPlan && (
             <button
               onClick={() => setShowModal(true)}
               className="bg-blue-600 text-white px-3 py-1 rounded text-right ml-auto"
@@ -182,7 +184,6 @@ export default function FindingDetailPage() {
                     handleSubmitRevision={handleSubmitRevision}
                     showReject={showReject}
                     setShowReject={setShowReject}
-                    userRole={userRole}
                   />
                 ))}
               </div>

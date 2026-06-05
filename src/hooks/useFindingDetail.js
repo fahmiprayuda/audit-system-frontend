@@ -40,7 +40,14 @@ export default function useFindingDetail(id, fdId) {
 
             setLoading(true);
 
-            const res = await api.get(`/findings/${id}`);
+            const res = await api.get(
+                `/findings/${id}`,
+                {
+                    params: {
+                        fd: fdId,
+                    },
+                }
+            );
 
             setFinding(res.data);
 

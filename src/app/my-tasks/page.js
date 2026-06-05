@@ -1,9 +1,17 @@
 "use client";
 
+import { formatDate } from "@/utils/date";
+
+import { useRouter } from "next/navigation";
+
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
+import { getUser } from "@/utils/auth";
 
 export default function MyTasksPage() {
+
+    const router = useRouter();
+    const user = getUser();
 
     const [data, setData] = useState(null);
 
@@ -26,11 +34,15 @@ export default function MyTasksPage() {
         return <p>Loading...</p>;
 
     return (
-        <div className="p-8">
+        <div className="p-8 space-y-6">
 
-            <h1 className="text-3xl font-bold mb-8">
-                My Tasks
+            <h1 className="text-3xl font-bold">
+                Welcome, {user?.name}
             </h1>
+
+            <p className="text-slate-500 mt-2">
+                Department: {data.department.name}
+            </p>
 
             {/* SUMMARY */}
 
@@ -73,11 +85,15 @@ export default function MyTasksPage() {
 
                         <tr>
                             <th className="p-4 text-left">
+                                Code Finding
+                            </th>
+
+                            <th className="p-4 text-left">
                                 Finding
                             </th>
 
                             <th className="p-4 text-left">
-                                Corrective Action
+                                Root Cause
                             </th>
 
                             <th className="p-4 text-left">
@@ -98,15 +114,21 @@ export default function MyTasksPage() {
 
                             <tr
                                 key={task.id}
-                                className="border-t"
+                                className="border-t border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
+                                onClick={() => router.push(`/findings/${task.finding_id}?fd=${task.finding_department_id}`)}
+
                             >
 
                                 <td className="p-4">
-                                    {task.finding_department?.finding?.title}
+                                    {task.finding_code}
                                 </td>
 
                                 <td className="p-4">
-                                    {task.corrective_action}
+                                    {task.title}
+                                </td>
+
+                                <td className="p-4">
+                                    {task.root_cause}
                                 </td>
 
                                 <td className="p-4">
@@ -114,7 +136,7 @@ export default function MyTasksPage() {
                                 </td>
 
                                 <td className="p-4">
-                                    {task.target_date}
+                                    {formatDate(task.target_date)}
                                 </td>
 
                             </tr>

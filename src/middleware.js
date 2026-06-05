@@ -46,8 +46,7 @@ export function middleware(request) {
         role === "auditee" &&
         (
             pathname.startsWith("/projects") ||
-            pathname.startsWith("/dashboard") ||
-            pathname.startsWith("/findings")
+            pathname.startsWith("/dashboard")
         )
     ) {
         return NextResponse.redirect(

@@ -39,6 +39,11 @@ export default function Sidebar() {
       path: "/reports",
       icon: BarChart3,
     },
+    {
+      name: "My Tasks",
+      path: "/my-tasks",
+      icon: BarChart3,
+    },
   ];
 
   const isActive = (itemPath) => {

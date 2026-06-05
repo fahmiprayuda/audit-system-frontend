@@ -5,6 +5,8 @@ import {
   STATUS_COLOR,
   CURRENT_OWNER,
 } from "@/constants/findingStatus";
+import { getUser, canManageActionPlan, isAuditee } from "@/utils/auth";
+
 
 
 export default function ActionPlanCard({ ap,
@@ -20,13 +22,14 @@ export default function ActionPlanCard({ ap,
   handleAction,
   handleSubmitRevision,
   showReject,
-  setShowReject,
-  userRole, }) {
+  setShowReject, }) {
+
+  const user = getUser()?.role;
 
   const actions = STATUS_FLOW[ap.status] || [];
 
   const isMyTurn =
-    CURRENT_OWNER[ap.status] === userRole;
+    CURRENT_OWNER[ap.status] === user?.role;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -225,7 +228,7 @@ export default function ActionPlanCard({ ap,
                 </button>
               )}
 
-              {isMyTurn && actions.includes("approve") && (
+              {canManageActionPlan() && isMyTurn && actions.includes("approve") && (
                 <button
                   onClick={() => handleAction("approve", ap.id)}
                   className="bg-blue-500 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl"
@@ -251,7 +254,7 @@ export default function ActionPlanCard({ ap,
             {/* RIGHT = EVIDENCE */}
             <div className="w-full max-w-md space-y-4 text-right">
 
-              {isMyTurn && actions.includes("submit") && (
+              {isAuditee() && isMyTurn && actions.includes("submit") && (
                 <>
                   <label className="inline-flex items-center gap-2 border px-5 py-3 rounded-2xl cursor-pointer bg-white hover:bg-slate-50">
                     📎 Upload Evidence

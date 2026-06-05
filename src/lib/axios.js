@@ -35,4 +35,25 @@ api.interceptors.response.use(
   }
 );
 
+api.interceptors.response.use(
+  response => response,
+  error => {
+
+    if (error.response?.status === 401) {
+
+      localStorage.clear();
+
+      document.cookie =
+        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+      document.cookie =
+        "role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+      window.location.href = "/login";
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default api;
