@@ -2,6 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
+import { useState, useEffect } from "react";
+import { getUser } from "@/utils/auth";
+
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,40 +15,66 @@ import {
 } from "lucide-react";
 
 export default function Sidebar() {
+
   const pathname = usePathname();
+
+  const [user, setUser] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
   const menu = [
     {
       name: "Dashboard",
       path: "/dashboard",
       icon: LayoutDashboard,
+      roles: ["admin", "auditor"],
     },
     {
       name: "Audit Projects",
       path: "/projects",
       icon: FolderKanban,
+      roles: ["admin", "auditor"],
     },
     {
       name: "Monitoring Findings",
       path: "/findings",
       icon: ClipboardList,
+      roles: ["admin", "auditor"],
     },
     {
       name: "Departments",
       path: "/departments",
       icon: Building2,
+      roles: ["admin", "auditor"],
     },
     {
       name: "Reports",
       path: "/reports",
       icon: BarChart3,
+      roles: ["admin", "auditor"],
     },
     {
       name: "My Tasks",
       path: "/my-tasks",
       icon: BarChart3,
+      roles: ["auditee"],
     },
   ];
+
+  useEffect(() => {
+
+    setUser(getUser());
+
+    setMounted(true);
+
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
+  const filteredMenu = menu.filter(item =>
+    item.roles.includes(user?.role)
+  );
 
   const isActive = (itemPath) => {
     const isFindingDetail = pathname.startsWith("/findings/");
@@ -83,7 +113,7 @@ export default function Sidebar() {
 
       {/* MENU */}
       <div className="p-4 space-y-2">
-        {menu.map((item) => {
+        {filteredMenu.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
 

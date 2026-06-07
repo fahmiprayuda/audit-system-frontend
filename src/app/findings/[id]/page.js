@@ -56,6 +56,7 @@ export default function FindingDetailPage() {
     handleSubmit,
     handleSubmitRevision,
     handleAction,
+    handleComment,
 
     fetchFinding,
 
@@ -181,6 +182,7 @@ export default function FindingDetailPage() {
                     setFiles={setFiles}
                     handleSubmit={handleSubmit}
                     handleAction={handleAction}
+                    handleComment={handleComment}
                     handleSubmitRevision={handleSubmitRevision}
                     showReject={showReject}
                     setShowReject={setShowReject}

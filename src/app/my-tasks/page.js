@@ -37,7 +37,7 @@ export default function MyTasksPage() {
         <div className="p-8 space-y-6">
 
             <h1 className="text-3xl font-bold">
-                Welcome, {user?.name}
+                Welcome, {user?.name}!!
             </h1>
 
             <p className="text-slate-500 mt-2">

@@ -12,9 +12,6 @@ export default function useFindingDetail(id, fdId) {
     const [files, setFiles] = useState({});
 
     const [comments, setComments] = useState({});
-    const [rejectComments, setRejectComments] = useState({});
-
-    const [showReject, setShowReject] = useState(null);
 
     const [showModal, setShowModal] = useState(false);
 
@@ -69,107 +66,6 @@ export default function useFindingDetail(id, fdId) {
         }
     }, [id]);
 
-    const handleSubmit = async (ap) => {
-
-        const message =
-            comments[ap.id] || rejectComments[ap.id];
-
-        if (!message?.trim()) {
-            alert("Comment wajib diisi");
-            return;
-        }
-
-        try {
-
-            const formData = new FormData();
-
-            formData.append(
-                "auditee_comment",
-                message
-            );
-
-            Array.from(files[ap.id] || [])
-                .forEach(file => {
-
-                    formData.append(
-                        "evidences[]",
-                        file
-                    );
-
-                });
-
-            await api.post(
-                `/action-plans/${ap.id}/submit`,
-                formData,
-                {
-                    headers: {
-                        "Content-Type":
-                            "multipart/form-data",
-                    },
-                }
-            );
-
-            setComments(prev => ({
-                ...prev,
-                [ap.id]: ""
-            }));
-
-            setRejectComments(prev => ({
-                ...prev,
-                [ap.id]: ""
-            }));
-
-            setFiles(prev => ({
-                ...prev,
-                [ap.id]: []
-            }));
-
-            fetchFinding();
-
-        } catch (err) {
-
-            alert(
-                err.response?.data?.message ||
-                "Error"
-            );
-        }
-    };
-
-    const handleSubmitRevision = async (ap) => {
-
-        const message = rejectComments[ap.id];
-
-        if (!message) {
-            alert("Comment wajib diisi");
-            return;
-        }
-
-        try {
-
-            await api.post(`/action-plans/${ap.id}/reject`, {
-                message,
-            });
-
-            setRejectComments((prev) => ({
-                ...prev,
-                [ap.id]: "",
-            }));
-
-            setShowReject(null);
-
-            fetchFinding();
-
-        } catch (err) {
-
-            console.error(err);
-
-            alert(
-                err.response?.data?.message ||
-                "Gagal submit revisi"
-            );
-        }
-    };
-
     const handleAction = async (type, id) => {
         try {
 
@@ -187,6 +83,46 @@ export default function useFindingDetail(id, fdId) {
         }
     };
 
+    const handleComment = async (actionPlanId) => {
+
+        const formData = new FormData();
+
+        formData.append(
+            "message",
+            comments[actionPlanId]
+        );
+
+        (files[actionPlanId] || []).forEach(file => {
+            formData.append(
+                "attachments[]",
+                file
+            );
+        });
+
+        await api.post(
+            `/action-plans/${actionPlanId}/comment`,
+            formData,
+            {
+                headers: {
+                    "Content-Type":
+                        "multipart/form-data"
+                }
+            }
+        );
+
+        setComments(prev => ({
+            ...prev,
+            [actionPlanId]: ""
+        }));
+
+        setFiles(prev => ({
+            ...prev,
+            [actionPlanId]: []
+        }));
+
+        fetchFinding();
+    };
+
     return {
         finding,
         loading,
@@ -197,14 +133,8 @@ export default function useFindingDetail(id, fdId) {
         comments,
         setComments,
 
-        rejectComments,
-        setRejectComments,
-
         files,
         setFiles,
-
-        showReject,
-        setShowReject,
 
         showModal,
         setShowModal,
@@ -212,10 +142,10 @@ export default function useFindingDetail(id, fdId) {
         newPlan,
         setNewPlan,
 
-        handleSubmit,
-        handleSubmitRevision,
         handleAction,
+        handleComment,
 
         fetchFinding,
     };
+
 }
