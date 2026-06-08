@@ -11,6 +11,8 @@ export default function useFindingDetail(id, fdId) {
 
     const [files, setFiles] = useState({});
 
+    const [showApprove, setShowApprove] = useState(null);
+
     const [comments, setComments] = useState({});
 
     const [showModal, setShowModal] = useState(false);
@@ -138,6 +140,9 @@ export default function useFindingDetail(id, fdId) {
 
         showModal,
         setShowModal,
+
+        showApprove,
+        setShowApprove,
 
         newPlan,
         setNewPlan,

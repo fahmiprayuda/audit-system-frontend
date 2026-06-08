@@ -69,7 +69,7 @@ export default function MyTasksPage() {
                 />
 
                 <Card
-                    title="Approved"
+                    title="Approved / Closed"
                     value={data.summary.approved}
                 />
 

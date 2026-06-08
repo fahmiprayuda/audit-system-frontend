@@ -44,8 +44,8 @@ export default function FindingDetailPage() {
     files,
     setFiles,
 
-    showReject,
-    setShowReject,
+    showApprove,
+    setShowApprove,
 
     showModal,
     setShowModal,
@@ -184,8 +184,8 @@ export default function FindingDetailPage() {
                     handleAction={handleAction}
                     handleComment={handleComment}
                     handleSubmitRevision={handleSubmitRevision}
-                    showReject={showReject}
-                    setShowReject={setShowReject}
+                    showApprove={showApprove}
+                    setShowApprove={setShowApprove}
                   />
                 ))}
               </div>

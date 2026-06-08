@@ -174,9 +174,10 @@ export default function ActionPlanCard({
 
         {/* COMPOSER */}
 
-        <div className="border-t p-6 space-y-4">
+        <div className="border-t p-6 space-y-4" hidden={ap.status === "approved"}>
 
           <textarea
+            hidden={ap.status === "approved"}
             className="w-full border rounded-2xl p-4 min-h-[20px]"
             placeholder="Write message..."
             value={comments[ap.id] || ""}
@@ -266,18 +267,7 @@ export default function ActionPlanCard({
           <div className="border-t bg-slate-50 p-6 flex gap-3 justify-end">
 
             <button
-              onClick={() =>
-                handleAction(
-                  "reject",
-                  ap.id
-                )
-              }
-              className="bg-pink-500 text-white px-5 py-2 rounded-xl"
-            >
-              Request Revision
-            </button>
-
-            <button
+              hidden={ap.status === "approved"}
               onClick={() =>
                 setShowApprove(ap.id)
               }
@@ -286,7 +276,15 @@ export default function ActionPlanCard({
               Close Action Plan
             </button>
 
+            {ap.status === "approved" && (
+              <div className="mx-6 mb-4 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-700">
+                🔒 Action Plan Closed
+              </div>
+            )}
+
+
           </div>
+
 
         )}
       </>

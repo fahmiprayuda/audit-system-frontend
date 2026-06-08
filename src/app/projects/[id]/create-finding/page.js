@@ -168,15 +168,15 @@ export default function CreateFindingPage() {
   };
 
   return (
-    <div className="p-10 bg-gray-100 min-h-screen">
+    <div className="p-10 bg-gray-100 min-h-screen max-w-5xl mx-auto">
 
-      <h1 className="text-3xl font-bold mb-6">
+      <h1 className="text-3xl font-bold mb-6 mx-auto text-center text-slate-900">
         Create Finding
       </h1>
 
       <form
         onSubmit={submitFinding}
-        className="bg-white p-8 rounded-xl shadow max-w-3xl space-y-6"
+        className="bg-white p-8 rounded-xl shadow max-w-3xl mx-auto space-y-6"
       >
 
         {/* TITLE */}
@@ -184,7 +184,7 @@ export default function CreateFindingPage() {
           placeholder="Finding Title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border px-3 py-4 rounded"
           required
         />
 
@@ -202,7 +202,7 @@ export default function CreateFindingPage() {
           onChange={(date) => setStartDate(date)}
           dateFormat="dd/MM/yyyy"
           placeholderText="Select finding start date"
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border px-3 py-4 rounded"
           wrapperClassName="w-full"
           required
         />
@@ -211,7 +211,7 @@ export default function CreateFindingPage() {
         <select
           value={risk}
           onChange={(e) => setRisk(e.target.value)}
-          className="w-full border px-3 py-2 rounded"
+          className="w-full border px-3 py-4 rounded"
         >
           <option value="Extreme">Extreme</option>
           <option value="Major">Major</option>
@@ -231,7 +231,7 @@ export default function CreateFindingPage() {
                 <div
                   key={dept.id}
                   onClick={() => toggleDepartment(dept.id)}
-                  className={`border p-2 rounded cursor-pointer ${checked ? "bg-blue-100 border-blue-400" : ""
+                  className={`border p-2 py-4 px-3 rounded cursor-pointer ${checked ? "bg-blue-100 border-blue-400" : ""
                     }`}
                 >
                   {dept.name}
@@ -300,7 +300,7 @@ export default function CreateFindingPage() {
                       dateFormat="dd/MM/yyyy"
                       placeholderText="Select timeline"
                       wrapperClassName="w-full"
-                      className="w-full border p-2 rounded"
+                      className="w-full border p-2 py-4 rounded"
                     />
                   </div>
 
