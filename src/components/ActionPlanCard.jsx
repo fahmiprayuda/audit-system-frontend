@@ -10,6 +10,8 @@ import {
 
 import { useRef, useEffect } from "react";
 
+import { getUser } from "@/utils/auth";
+
 export default function ActionPlanCard({
   ap,
 
@@ -28,6 +30,8 @@ export default function ActionPlanCard({
   showApprove,
   setShowApprove,
 }) {
+
+  const currentUserId = getUser()?.id;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -103,48 +107,69 @@ export default function ActionPlanCard({
       <>
         {/* CHAT HISTORY */}
 
-        <div className="bg-slate-50 p-6 space-y-4 max-h-[500px] overflow-y-auto">
+        <div className="bg-slate-50 p-6 space-y-4 max-h-[500px] overflow-y-auto ">
 
-          {(ap.comments || []).map(comment => (
+          {(ap.comments || []).map(comment => {
 
-            <div
-              key={comment.id}
-              className={`max-w-[70%] rounded-2xl p-4 text-sm ${comment.role === "auditor"
-                ? "bg-orange-100"
-                : "bg-blue-100 ml-auto"
-                }`}
-            >
+            console.log(comment);
+            console.log(
+              "comment.user_id",
+              comment.user_id
+            );
+            const isMine =
+              comment.user_id === currentUserId;
 
-              <div className="font-semibold text-xs mb-1">
-                {comment.user_name}
+            return (
+
+              <div
+                key={comment.id}
+                className={`flex ${isMine
+                  ? "justify-end"
+                  : "justify-start"
+                  }`}
+              >
+
+                <div
+                  className={`max-w-[70%] rounded-2xl p-4 text-sm ${isMine
+                    ? "bg-blue-100"
+                    : "bg-slate-100"
+                    }`}
+                >
+
+                  <div className="font-semibold text-xs mb-1">
+                    {isMine
+                      ? "You"
+                      : comment.user_name}
+                  </div>
+
+                  <p>{comment.message}</p>
+
+                  {comment.attachments?.map(file => (
+                    <a
+                      key={file.id}
+                      href={`http://localhost:8000/storage/${file.file_path}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block mt-2 p-2 text-blue-600 text-xs"
+                    >
+                      📎 {file.file_name}
+                    </a>
+                  ))}
+
+                  <p className="text-xs text-slate-400 mt-2">
+                    {formatDateTime(comment.created_at)}
+                  </p>
+
+                  <div ref={bottomRef} />
+
+                </div>
               </div>
 
-              <p>
-                {comment.message}
-              </p>
+            );
 
-              {comment.attachments?.map(file => (
+          })}
 
-                <a
-                  key={file.id}
-                  href={`http://localhost:8000/storage/${file.file_path}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block mt-2 p-2 text-blue-600 text-xs"
-                >
-                  📎 {file.file_name}
-                </a>
 
-              ))}
-
-              <p className="text-xs text-slate-400 mt-2">
-                {formatDateTime(comment.created_at)}
-              </p>
-
-              <div ref={bottomRef} />
-            </div>
-
-          ))}
         </div>
 
         {/* COMPOSER */}
@@ -163,69 +188,74 @@ export default function ActionPlanCard({
             }
           />
 
-          <div className="flex justify-between items-center">
+          <div className="space-y-3">
 
-            <label className="border px-4 py-2 rounded-xl cursor-pointer bg-white">
+            {files[ap.id]?.length > 0 && (
+              <div className="bg-slate-50 border rounded-xl p-3 space-y-2 mb-12">
 
-              📎 Attach File
+                {files[ap.id].map((file, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-sm"
+                  >
+                    <span>📎 {file.name}</span>
 
-              <input
-                type="file"
-                multiple
-                hidden
-                onChange={(e) => {
+                    <button
+                      onClick={() => {
+                        setFiles(prev => ({
+                          ...prev,
+                          [ap.id]: prev[ap.id].filter(
+                            (_, i) => i !== idx
+                          )
+                        }));
+                      }}
+                      className="text-red-500 text-xs"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
 
-                  const selectedFiles =
-                    Array.from(
-                      e.target.files || []
-                    );
+              </div>
+            )}
 
-                  setFiles(prev => ({
-                    ...prev,
-                    [ap.id]: [
-                      ...(prev[ap.id] || []),
-                      ...selectedFiles
-                    ]
-                  }));
+            <div className="mt-8 flex justify-between items-center">
 
-                }}
-              />
+              <label className=" border px-4 py-2 rounded-xl cursor-pointer bg-white">
+                📎 Attach File
 
-            </label>
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    const selectedFiles =
+                      Array.from(e.target.files || []);
 
-            <button
-              disabled={!comments[ap.id]?.trim()}
-              onClick={() =>
-                handleComment(ap.id)
-              }
-              className={`px-5 py-2 rounded-xl text-white ${comments[ap.id]?.trim()
-                ? "bg-slate-800"
-                : "bg-gray-400"
-                }`}
-            >
-              Send
-            </button>
+                    setFiles(prev => ({
+                      ...prev,
+                      [ap.id]: [
+                        ...(prev[ap.id] || []),
+                        ...selectedFiles
+                      ]
+                    }));
+                  }}
+                />
+              </label>
 
-          </div>
-
-          {files[ap.id]?.length > 0 && (
-
-            <div className="bg-slate-50 border rounded-xl p-3">
-
-              {files[ap.id].map((file, idx) => (
-
-                <div
-                  key={idx}
-                  className="text-sm"
-                >
-                  📎 {file.name}
-                </div>
-
-              ))}
+              <button
+                disabled={!comments[ap.id]?.trim()}
+                onClick={() => handleComment(ap.id)}
+                className={`px-5 py-2 rounded-xl text-white ${comments[ap.id]?.trim()
+                  ? "bg-slate-800"
+                  : "bg-gray-400"
+                  }`}
+              >
+                Send
+              </button>
 
             </div>
-
-          )}
+          </div>
 
         </div>
 
