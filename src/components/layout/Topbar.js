@@ -2,6 +2,8 @@
 
 import api from "@/lib/axios";
 
+import { timeAgo } from "@/utils/date";
+
 import {
   useEffect,
   useRef,
@@ -20,6 +22,76 @@ export default function Topbar() {
 
   const [count, setCount] = useState(0);
 
+  const [notifications, setNotifications] =
+    useState([]);
+
+  const [notifOpen, setNotifOpen] =
+    useState(false);
+
+  const loadNotifications = async () => {
+
+    const res = await api.get(
+      "/notifications"
+    );
+
+    setNotifications(
+      res.data
+    );
+  };
+
+  const loadUnread = async () => {
+
+    const res = await api.get(
+      "/notifications/unread-count"
+    );
+
+    setCount(res.data.count);
+  };
+
+  useEffect(() => {
+
+    loadUnread();
+    loadNotifications();
+
+  }, []);
+
+  const openNotification =
+    async (notif) => {
+
+      await api.post(
+        `/notifications/${notif.id}/read`
+      );
+
+      loadUnread();
+
+      setNotifOpen(false);
+
+      setTimeout(() => {
+        router.push(notif.url);
+      }, 150);
+
+      if (notif.url) {
+        router.push(notif.url);
+      }
+    };
+
+  useEffect(() => {
+
+    loadUnread();
+
+    const interval =
+      setInterval(() => {
+
+        loadUnread();
+        loadNotifications();
+
+      }, 5000);
+
+    return () =>
+      clearInterval(interval);
+
+  }, []);
+
   const router = useRouter();
 
   const [mounted, setMounted] =
@@ -34,18 +106,7 @@ export default function Topbar() {
   const dropdownRef =
     useRef(null);
 
-  const loadUnread = async () => {
 
-    const res = await api.get(
-      "/notifications/unread-count"
-    );
-
-    setCount(res.data.count);
-  };
-
-  useEffect(() => {
-    loadUnread();
-  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -105,36 +166,7 @@ export default function Topbar() {
         Audit Monitoring
       </h1>
 
-      <div className="flex items-center gap-4">
-
-        <button className="relative hover:bg-gray-100 p-2 rounded-xl">
-
-          🔔
-
-          {count > 0 && (
-            <span
-              className="
-            absolute
-            -top-1
-            -right-1
-            bg-red-500
-            text-white
-            text-[10px]
-            rounded-full
-            min-w-[18px]
-            h-[18px]
-            px-1
-            flex
-            items-center
-            justify-center
-          "
-            >
-              {count}
-            </span>
-          )}
-
-        </button>
-
+      <div className="relative flex items-center gap-4 mr-16">
 
         <div
           className="relative"
@@ -206,6 +238,118 @@ export default function Topbar() {
             </div>
           )}
         </div>
+
+        <button onClick={() =>
+          setNotifOpen(
+            !notifOpen
+          )
+        } className="relative hover:bg-gray-100 p-2 rounded-xl">
+          🔔
+          {count > 0 && (
+            <span
+              className="
+            absolute
+            -top-1
+            -right-1
+            bg-red-500
+            text-white
+            text-[10px]
+            rounded-full
+            min-w-[18px]
+            h-[18px]
+            px-1
+            flex
+            items-center
+            justify-center
+          "
+            >
+              {count}
+            </span>
+          )}
+
+        </button>
+
+        {notifOpen && (
+
+          <div
+            className="
+    absolute
+    right-0
+    top-12
+    w-96
+    bg-white
+    border
+    rounded-2xl
+    shadow-xl
+    z-50
+    overflow-hidden
+  "
+          >
+
+            <div className="p-4 border-b">
+
+              <h3 className="font-semibold">
+                Notifications
+              </h3>
+
+            </div>
+
+            <div className="max-h-96 overflow-y-auto">
+
+              {notifications.length === 0 && (
+
+                <div className="p-4 text-sm text-gray-500">
+
+                  No notifications
+
+                </div>
+
+              )}
+
+              {notifications.map((notif) => (
+
+                <div
+                  key={notif.id}
+                  onClick={() => openNotification(notif)}
+                  className={`
+                      p-3 border-b cursor-pointer transition
+                      ${!notif.read_at
+                      ? "bg-blue-50 border-l-4 hover:bg-blue-100"
+                      : "bg-white hover:bg-gray-50"
+                    }`}
+                >
+
+                  <div className="flex items-center justify-between">
+
+                    <p className="font-medium">
+                      {notif.title}
+                    </p>
+
+                    {!notif.read_at && (
+                      <span className="w-2 h-2 bg-blue-500 rounded-full" />
+                    )}
+
+                  </div>
+
+                  <p className="text-sm text-gray-600">
+                    {notif.message}
+                  </p>
+
+                  <p className="text-xs text-gray-400">
+                    {timeAgo(notif.created_at)}
+                  </p>
+
+                </div>
+
+              ))}
+
+            </div>
+
+          </div>
+
+        )}
+
+
       </div >
 
     </header>

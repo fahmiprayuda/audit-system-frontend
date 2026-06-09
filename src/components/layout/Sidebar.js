@@ -115,7 +115,7 @@ export default function Sidebar() {
       <div className="p-4 space-y-2">
         {filteredMenu.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.path);
+          const active = pathname === item.path;
 
           return (
             <Link
