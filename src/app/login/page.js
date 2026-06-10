@@ -43,7 +43,7 @@ export default function LoginPage() {
             if (res.data.user.role === "auditee") {
                 router.push("/my-tasks");
             } else {
-                router.push("/projects");
+                router.push("/");
             }
 
         } catch (err) {

@@ -59,6 +59,7 @@ export function middleware(request) {
 
 export const config = {
     matcher: [
+        "/",
         "/projects/:path*",
         "/dashboard/:path*",
         "/findings/:path*",

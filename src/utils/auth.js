@@ -12,23 +12,23 @@ export function getUser() {
 export function canManageActionPlan() {
     const user = getUser();
 
-    return ["admin", "auditor"].includes(user?.role);
+    return ["manager", "auditor"].includes(user?.role);
 }
 
 export function canDeleteFinding() {
     const user = getUser();
 
-    return user?.role === "admin";
+    return user?.role === "manager";
 }
 
 export function canApproveActionPlan() {
     const user = getUser();
 
-    return ["admin", "auditor"].includes(user?.role);
+    return ["manager", "auditor"].includes(user?.role);
 }
 
-export function isAdmin() {
-    return getUser()?.role === "admin";
+export function ismanager() {
+    return getUser()?.role === "manager";
 }
 
 export function isAuditor() {
