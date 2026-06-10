@@ -109,14 +109,6 @@ export default function FindingDetailPage() {
 
           <RiskBadge risk={finding.risk_rating} />
 
-          <span className="text-slate-500">
-            Start Date:
-          </span>
-
-          <span className="font-semibold">
-            {formatDate(finding.start_date)}
-          </span>
-
           {fdId && canCreateActionPlan && (
             <button
               onClick={() => setShowModal(true)}

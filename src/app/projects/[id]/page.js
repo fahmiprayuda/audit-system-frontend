@@ -214,7 +214,6 @@ export default function ProjectPage() {
               <th className="p-4">Department</th>
               <th className="p-4">Risk</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Start Date</th>
               <th className="p-4">Action</th>
             </tr>
           </thead>
@@ -247,11 +246,6 @@ export default function ProjectPage() {
 
                     <td className="p-4">
                       <StatusBadge status={finding.status} />
-                    </td>
-
-                    <td className="p-4">
-                      {console.log("start_date:", finding.start_date)}
-                      {formatDate(finding.start_date)}
                     </td>
 
                     <td className="p-4 flex gap-2">

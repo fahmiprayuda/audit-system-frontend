@@ -81,7 +81,7 @@ export default function ActionPlanCard({
           </p>
 
           <p className="text-xs text-slate-400 mt-2">
-            Due: {formatDate(ap.target_date)}
+            Due: {formatDate(ap.due_date)}
           </p>
         </div>
 

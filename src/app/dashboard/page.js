@@ -449,7 +449,7 @@ export default function DashboardPage() {
 
                                                 <td className="px-5 py-4">
                                                     {formatDate(
-                                                        item.target_date
+                                                        item.due_date
                                                     )}
                                                 </td>
 

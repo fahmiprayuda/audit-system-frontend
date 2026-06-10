@@ -20,7 +20,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
-  const [startDate, setStartDate] = useState("");
+  const [releaseDate, setReleaseDate] = useState("");
 
   const [companies, setCompanies] = useState([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
@@ -101,7 +101,7 @@ export default function ProjectsPage() {
       await api.post("/projects", {
         company_id: Number(company),
         project_name: name.trim(),
-        start_date: startDate || null,
+        release_date: releaseDate || null,
       });
 
       await fetchProjects(currentPage);
@@ -113,7 +113,7 @@ export default function ProjectsPage() {
 
       setName("");
       setCompany("");
-      setStartDate("");
+      setReleaseDate("");
 
 
     } catch (err) {
@@ -173,7 +173,7 @@ export default function ProjectsPage() {
               <th className="p-4">Project</th>
               <th className="p-4">Company</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Start</th>
+              <th className="p-4">Release Date</th>
               <th className="p-4">Action</th>
             </tr>
           </thead>
@@ -213,7 +213,7 @@ export default function ProjectsPage() {
 
                 {/* START */}
                 <td className="p-4">
-                  {formatDate(project.start_date)}
+                  {formatDate(project.release_date)}
                 </td>
 
                 {/* ACTION */}
@@ -332,13 +332,13 @@ export default function ProjectsPage() {
             {/* DATE */}
             <div className="mb-6">
               <label className="block text-sm mb-1">
-                Start Date
+                Release Date
               </label>
 
               <input
                 type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                value={releaseDate}
+                onChange={(e) => setReleaseDate(e.target.value)}
                 className="w-full border px-3 py-2 rounded"
               />
             </div>

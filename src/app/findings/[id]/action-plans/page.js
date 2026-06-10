@@ -114,7 +114,7 @@ export default function ActionPlansPage() {
             finding_department_id: Number(fdId),
             root_cause: plan.root_cause || "",
             corrective_action: plan.corrective_action || "",
-            target_date: plan.target_date || null,
+            due_date: plan.due_date || null,
           });
 
         });
@@ -221,7 +221,7 @@ export default function ActionPlansPage() {
 
                   <input
                     type="date"
-                    value={plan.target_date}
+                    value={plan.due_date}
                     onChange={(e) =>
                       handleChange(
                         fd.finding_department_id,

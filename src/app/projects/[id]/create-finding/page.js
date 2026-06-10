@@ -14,7 +14,6 @@ export default function CreateFindingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [risk, setRisk] = useState("Moderate");
-  const [startDate, setStartDate] = useState(null);
 
   const [departments, setDepartments] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
@@ -63,8 +62,7 @@ export default function CreateFindingPage() {
         [deptId]: {
           root_cause: "",
           corrective_action: "",
-          start_date: "",
-          target_date: "",
+          due_date: "",
         }
       }));
     }
@@ -98,17 +96,6 @@ export default function CreateFindingPage() {
         return alert("Semua department wajib punya corrective action");
       }
 
-      if (
-        ap.start_date &&
-        ap.target_date &&
-        new Date(ap.target_date) < new Date(ap.start_date)
-      ) {
-        return alert("Target date tidak boleh sebelum start date");
-      }
-    }
-
-    if (!startDate) {
-      return alert("Finding date wajib diisi");
     }
 
     setLoading(true);
@@ -122,25 +109,21 @@ export default function CreateFindingPage() {
         description,
         risk_rating: risk,
 
-        start_date: formatDate(startDate),
-
         departments: selectedDepartments.map(Number),
 
         action_plans: selectedDepartments.map((deptId) => ({
           department_id: Number(deptId),
 
-          root_cause: actionPlans[deptId]?.root_cause || "",
+          root_cause:
+            actionPlans[deptId]?.root_cause || "",
 
-          corrective_action: actionPlans[deptId]?.corrective_action || "",
+          corrective_action:
+            actionPlans[deptId]?.corrective_action || "",
 
-          start_date: formatDate(
-            actionPlans[deptId]?.start_date
+          due_date: formatDate(
+            actionPlans[deptId]?.due_date
           ),
-
-          target_date: formatDate(
-            actionPlans[deptId]?.target_date
-          ),
-        })),
+        }))
       };
 
       console.log("PAYLOAD:", payload);
@@ -194,17 +177,6 @@ export default function CreateFindingPage() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           className="w-full border px-3 py-2 rounded"
-        />
-
-        {/* FINDING DATE */}
-        <DatePicker
-          selected={startDate}
-          onChange={(date) => setStartDate(date)}
-          dateFormat="dd/MM/yyyy"
-          placeholderText="Select finding start date"
-          className="w-full border px-3 py-4 rounded"
-          wrapperClassName="w-full"
-          required
         />
 
         {/* RISK */}
@@ -275,31 +247,21 @@ export default function CreateFindingPage() {
                 <div className="gap-3 mt-2">
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Timeline
+                    <label className="block font-bold mb-2">
+                      Due Date
                     </label>
 
                     <DatePicker
-                      selectsRange
-                      startDate={ap?.start_date}
-                      endDate={ap?.target_date}
-                      onChange={(dates) => {
-                        const [start, end] = dates;
-
-                        setActionPlans((prev) => ({
-                          ...prev,
-                          [deptId]: {
-                            ...prev[deptId],
-                            start_date: start,
-                            target_date: end,
-                          },
-                        }));
-                      }}
-                      isClearable
-                      monthsShown={2}
+                      selected={ap?.due_date}
+                      onChange={(date) =>
+                        handleAPChange(
+                          deptId,
+                          "due_date",
+                          date
+                        )
+                      }
                       dateFormat="dd/MM/yyyy"
-                      placeholderText="Select timeline"
-                      wrapperClassName="w-full"
+                      placeholderText="Select due date"
                       className="w-full border p-2 py-4 rounded"
                     />
                   </div>

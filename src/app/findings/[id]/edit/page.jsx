@@ -14,7 +14,6 @@ export default function EditFindingPage() {
     title: "",
     description: "",
     risk_rating: "",
-    start_date: ""
   });
 
   const [loading, setLoading] = useState(true);
@@ -36,7 +35,6 @@ export default function EditFindingPage() {
           title: finding.title,
           description: finding.description,
           risk_rating: finding.risk_rating,
-          start_date: finding.start_date || "",
         });
 
 
@@ -102,13 +100,6 @@ export default function EditFindingPage() {
           <option value="Major">Major</option>
           <option value="Moderate">Moderate</option>
         </select>
-
-        <input
-          type="date"
-          value={form.start_date || ""}
-          onChange={(e) => setForm({ ...form, start_date: e.target.value })}
-          className="w-full border p-2 rounded"
-        />
 
         <button className="bg-blue-600 text-white px-4 py-2 rounded">
           Save Changes
