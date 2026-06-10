@@ -1,0 +1,264 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import api from "@/lib/axios";
+
+export default function UsersPage() {
+
+    const [users, setUsers] =
+        useState([]);
+
+    useEffect(() => {
+        loadUsers();
+    }, []);
+
+    const loadUsers = async () => {
+
+        const res =
+            await api.get("/users");
+
+        setUsers(res.data);
+
+    };
+
+    const [showCreate, setShowCreate] =
+        useState(false);
+
+    const [form, setForm] =
+        useState({
+            name: "",
+            email: "",
+            password: "",
+            role: "auditee",
+            department_id: ""
+        });
+
+    const [departments, setDepartments] =
+        useState([]);
+
+    const loadDepartments =
+        async () => {
+
+            const res =
+                await api.get(
+                    "/departments"
+                );
+
+            setDepartments(
+                res.data
+            );
+
+        };
+
+    useEffect(() => {
+        loadUsers();
+        loadDepartments();
+    }, []);
+
+    const createUser =
+        async () => {
+
+            const payload = {
+                ...form
+            };
+
+            if (payload.role !== "auditee") {
+                payload.department_id = null;
+            }
+
+            await api.post("/users", payload);
+
+            setShowCreate(false);
+
+            loadUsers();
+
+            setForm({
+                name: "",
+                email: "",
+                password: "",
+                role: "auditee",
+                department_id: ""
+            });
+
+        };
+
+
+    return (
+        <div className="p-6">
+
+            <div className="flex justify-between mb-6">
+
+                <h1 className="text-2xl font-bold">
+                    User Management
+                </h1>
+
+                <button
+                    onClick={() => setShowCreate(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition">
+                    + User
+                </button>
+
+            </div>
+            <div className="bg-white rounded-2xl shadow overflow-hidden">
+                <table className="w-full table-auto border-collapse border border-gray-300">
+
+                    <thead className="bg-slate-100">
+                        <tr>
+                            <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Name</th>
+                            <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Email</th>
+                            <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Role</th>
+                            <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Department</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {users.map(user => (
+                            <tr key={user.id}>
+                                <td className="px-6 py-4 border-t border-slate-100">{user.name}</td>
+                                <td className="px-6 py-4 border-t border-slate-100">{user.email}</td>
+                                <td className="px-6 py-4 border-t border-slate-100">{user.role}</td>
+                                <td className="px-6 py-4 border-t border-slate-100">
+                                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-md">
+                                        {user.department?.name}
+                                    </span>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Start Modal */}
+            {showCreate && (
+
+                <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-xl w-[500px]">
+
+                        <h2 className="text-2xl font-bold mb-6">
+                            Create User
+                        </h2>
+
+                        <label className="text-md font-medium mb-2 block">Full Name</label>
+                        <input className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Name"
+                            value={form.name}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    name: e.target.value
+                                })
+                            }
+                        />
+
+                        <label className="text-md font-medium mb-2 block">Email</label>
+                        <input className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Email"
+                            value={form.email}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    email: e.target.value
+                                })
+                            }
+                        />
+
+                        <label className="text-md font-medium mb-2 block">Password</label>
+                        <input className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            type="password"
+                            placeholder="Password"
+                            value={form.password}
+                            onChange={(e) =>
+                                setForm({
+                                    ...form,
+                                    password: e.target.value
+                                })
+                            }
+                        />
+
+                        <label className="text-md font-medium mb-2 block">Role  </label>
+                        <select className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            value={form.role}
+                            onChange={(e) => {
+
+                                const role = e.target.value;
+
+                                setForm({
+                                    ...form,
+                                    role,
+                                    department_id:
+                                        role === "auditee"
+                                            ? form.department_id
+                                            : ""
+                                });
+
+                            }}
+                        >
+                            <option value="manager">
+                                Manager
+                            </option>
+                            <option value="auditor">
+                                Auditor
+                            </option>
+                            <option value="auditee">
+                                Auditee
+                            </option>
+                        </select>
+
+                        {form.role === "auditee" && (
+
+                            <select className="w-full mb-10 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                value={form.department_id}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        department_id: e.target.value
+                                    })
+                                }
+                            >
+
+                                <option value="">
+                                    Select Department
+                                </option>
+
+                                {departments.map(d => (
+
+                                    <option
+                                        key={d.id}
+                                        value={d.id}
+                                    >
+                                        {d.name}
+                                    </option>
+
+                                ))}
+
+                            </select>
+
+                        )}
+
+                        <div className="flex justify-end gap-2 mt-4">
+
+                            <button
+                                onClick={() =>
+                                    setShowCreate(false)
+                                }
+                                className="border px-5 py-2.5 rounded-xl">
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={createUser}
+                                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl ">
+                                Save
+                            </button>
+
+                        </div>
+
+
+                    </div>
+                </div>
+            )}
+            {/* End Modal */}
+
+        </div>
+    );
+}

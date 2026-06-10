@@ -58,6 +58,12 @@ export default function Sidebar() {
       icon: BarChart3,
       roles: ["auditee"],
     },
+    {
+      name: "User Management",
+      path: "/users",
+      icon: BarChart3,
+      roles: ["manager"],
+    },
   ];
 
   useEffect(() => {
