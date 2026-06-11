@@ -64,6 +64,12 @@ export default function Sidebar() {
       icon: BarChart3,
       roles: ["manager"],
     },
+    {
+      name: "Audit Trails",
+      path: "/audit-trails",
+      icon: FolderKanban,
+      roles: ["manager"],
+    },
   ];
 
   useEffect(() => {
