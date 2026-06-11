@@ -21,8 +21,7 @@ export default function useFindingDetail(id, fdId) {
         finding_department_id: fdId || "",
         root_cause: "",
         corrective_action: "",
-        start_date: null,
-        target_date: null,
+        due_date: null,
     });
 
     useEffect(() => {

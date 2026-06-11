@@ -32,7 +32,7 @@ export default function ActionPlansPage() {
             {
               root_cause: "",
               corrective_action: "",
-              target_date: "",
+              due_date: "",
             },
           ];
         });
@@ -70,7 +70,7 @@ export default function ActionPlansPage() {
         {
           root_cause: "",
           corrective_action: "",
-          target_date: "",
+          due_date: "",
         },
       ],
     });
@@ -89,7 +89,7 @@ export default function ActionPlansPage() {
           {
             root_cause: "",
             corrective_action: "",
-            target_date: "",
+            due_date: "",
           },
         ],
     });
@@ -226,7 +226,7 @@ export default function ActionPlansPage() {
                       handleChange(
                         fd.finding_department_id,
                         index,
-                        "target_date",
+                        "due_date",
                         e.target.value
                       )
                     }

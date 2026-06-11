@@ -20,6 +20,63 @@ import {
 
 export default function Topbar() {
 
+  const [showProfile, setShowProfile] =
+    useState(false);
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [profile, setProfile] =
+    useState({
+      name: "",
+      email: "",
+      role: "",
+      department: ""
+    });
+
+  const loadProfile = async () => {
+
+    const res =
+      await api.get("/profile");
+
+    setProfile({
+      name: res.data.name,
+      email: res.data.email,
+      role: res.data.role,
+      department:
+        res.data.department?.name || "-"
+    });
+
+  };
+
+  const saveProfile = async () => {
+
+    await api.put("/profile", {
+      name: profile.name,
+      email: profile.email
+    });
+
+    const updatedUser = {
+      ...user,
+      name: profile.name,
+      email: profile.email
+
+
+    };
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(updatedUser)
+    );
+
+    setUser(updatedUser);
+
+    alert("Profile updated");
+
+    setShowProfile(false);
+
+  };
+
   const [count, setCount] = useState(0);
 
   const [notifications, setNotifications] =
@@ -70,9 +127,6 @@ export default function Topbar() {
         router.push(notif.url);
       }, 150);
 
-      if (notif.url) {
-        router.push(notif.url);
-      }
     };
 
   useEffect(() => {
@@ -99,6 +153,10 @@ export default function Topbar() {
 
   const [user, setUser] =
     useState(null);
+
+  const isChanged =
+    profile.name !== (user?.name || "") ||
+    profile.email !== (user?.email || "");
 
   const [open, setOpen] =
     useState(false);
@@ -160,6 +218,39 @@ export default function Topbar() {
     router.push("/login");
   };
 
+  const [passwordForm, setPasswordForm] =
+    useState({
+      current_password: "",
+      new_password: "",
+      new_password_confirmation: ""
+    });
+
+  const changePassword = async () => {
+
+    try {
+
+      await api.post(
+        "/change-password",
+        passwordForm
+      );
+
+      alert(
+        "Password changed successfully"
+      );
+
+      setShowPassword(false);
+
+    } catch (err) {
+
+      alert(
+        err.response?.data?.message ||
+        "Failed to change password"
+      );
+
+    }
+
+  };
+
   return (
     <header className="ml-20 h-16 bg-white border-b px-6 flex items-center justify-between">
       <h1 className="font-semibold text-lg">
@@ -213,28 +304,36 @@ export default function Topbar() {
 
           {open && (
             <div
-              className="absolute right-0 mt-2 w-48
-                       bg-white border rounded-lg shadow-lg z-50"
-            >
+              className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-lg z-50">
+
               <button
-                className="w-full flex items-center gap-2
-                         px-4 py-3 text-sm hover:bg-gray-50"
+                onClick={async () => {
+                  await loadProfile();
+                  setShowProfile(true);
+                  setOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
               >
-                <User size={16} />
-                Profile
+                👤 My Profile
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowPassword(true);
+                  setOpen(false);
+                }}
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+              >
+                🔑 Change Password
               </button>
 
               <button
                 onClick={logout}
-                className="w-full flex items-center gap-2
-                         px-4 py-3 text-sm
-                         text-red-600 hover:bg-red-50"
+                className="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
               >
-                <LogOut
-                  size={16}
-                />
-                Logout
+                🚪 Logout
               </button>
+
             </div>
           )}
         </div>
@@ -341,6 +440,7 @@ export default function Topbar() {
 
                 </div>
 
+
               ))}
 
             </div>
@@ -349,6 +449,162 @@ export default function Topbar() {
 
         )}
 
+        {/* My Profile */}
+        {showProfile && (
+
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+
+            <div className="bg-white p-6 rounded-xl w-[500px]">
+
+              <h2 className="text-xl font-bold mb-4">
+                My Profile
+              </h2>
+
+              <input
+                value={profile.name}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    name: e.target.value
+                  })
+                }
+                className="w-full border p-2 rounded mb-3"
+              />
+
+              <input
+                value={profile.email}
+                onChange={(e) =>
+                  setProfile({
+                    ...profile,
+                    email: e.target.value
+                  })
+                }
+                className="w-full border p-2 rounded mb-3"
+              />
+
+              <input
+                value={profile.role}
+                disabled
+                className="w-full border p-2 rounded mb-3 bg-gray-100"
+              />
+
+              <input
+                value={profile.department}
+                disabled
+                className="w-full border p-2 rounded bg-gray-100"
+              />
+
+              <div className="flex justify-end gap-2 mt-4">
+
+                <button
+                  onClick={() =>
+                    setShowProfile(false)
+                  }
+                  className="border px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  disabled={!isChanged}
+                  onClick={saveProfile}
+                  className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save
+                </button>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        )}
+        {/* end My Profile */}
+
+
+        {/* Show Change Password */}
+        {showPassword && (
+
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+
+            <div className="bg-white p-6 rounded-xl w-[500px]">
+
+              <h2 className="text-xl font-bold mb-4">
+                Change Password
+              </h2>
+
+              <input
+                type="password"
+                placeholder="Current Password"
+                value={passwordForm.current_password}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    current_password:
+                      e.target.value
+                  })
+                }
+                className="w-full border p-2 rounded mb-3"
+              />
+
+              <input
+                type="password"
+                placeholder="New Password"
+                value={passwordForm.new_password}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    new_password:
+                      e.target.value
+                  })
+                }
+                className="w-full border p-2 rounded mb-3"
+              />
+
+              <input
+                type="password"
+                placeholder="Confirm Password"
+                value={
+                  passwordForm.new_password_confirmation
+                }
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    new_password_confirmation:
+                      e.target.value
+                  })
+                }
+                className="w-full border p-2 rounded mb-4"
+              />
+
+              <div className="flex justify-end gap-2 mt-4">
+
+                <button
+                  onClick={() =>
+                    setShowPassword(false)
+                  }
+                  className="border px-4 py-2 rounded"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={changePassword}
+                  className="bg-blue-600 text-white px-4 py-2 rounded"
+                >
+                  Change Password
+                </button>
+
+              </div>
+
+
+            </div>
+
+          </div>
+
+        )}
+        {/* end change password */}
 
       </div >
 

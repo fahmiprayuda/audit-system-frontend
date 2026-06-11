@@ -24,8 +24,7 @@ export default function ProjectPage() {
     department_id: "",
     root_cause: "",
     corrective_action: "",
-    start_date: null,
-    target_date: null
+    due_date: null
   });
 
   const {
@@ -93,8 +92,7 @@ export default function ProjectPage() {
         finding_department_id: fdId,
         root_cause: form.root_cause,
         corrective_action: form.corrective_action,
-        start_date: form.start_date,
-        target_date: form.target_date,
+        due_date: form.due_date,
       });
 
       if (!success) return;
@@ -110,8 +108,7 @@ export default function ProjectPage() {
         department_id: "",
         root_cause: "",
         corrective_action: "",
-        start_date: null,
-        target_date: null
+        due_date: null
       });
 
     } catch (err) {
@@ -350,30 +347,22 @@ export default function ProjectPage() {
 
             <div>
               <label className="block text-sm font-medium mb-2">
-                Timeline
+                Due Date
               </label>
 
               <DatePicker
-                selectsRange
-                startDate={form.start_date}
-                endDate={form.target_date}
-                onChange={(dates) => {
-                  const [start, end] = dates;
-
-                  setForm((prev) => ({
+                selected={form.due_date}
+                onChange={(date) =>
+                  setForm(prev => ({
                     ...prev,
-                    start_date: start,
-                    target_date: end,
-                  }));
-                }}
-                isClearable
-                monthsShown={2}
+                    due_date: date
+                  }))
+                }
                 dateFormat="dd MMM yyyy"
-                placeholderText="Select timeline"
+                placeholderText="Select due date"
                 wrapperClassName="w-full"
                 className="w-full border border-slate-300 px-4 py-3 rounded-xl"
               />
-
             </div>
 
             <div className="flex justify-end gap-2">

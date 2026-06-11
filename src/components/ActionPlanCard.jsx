@@ -36,10 +36,10 @@ export default function ActionPlanCard({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const target = new Date(ap.target_date);
+  const target = new Date(ap.due_date);
 
   const isOverdue =
-    ap.target_date &&
+    ap.due_date &&
     target < today &&
     ap.status !== "approved";
 

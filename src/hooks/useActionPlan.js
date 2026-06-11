@@ -2,14 +2,15 @@
 
 import api from "@/lib/axios";
 
+import { formatDateForApi } from "@/utils/date";
+
 export default function useActionPlan() {
 
     const handleCreatePlan = async ({
         finding_department_id,
         root_cause,
         corrective_action,
-        start_date,
-        target_date,
+        due_date,
     }) => {
 
         if (!corrective_action?.trim()) {
@@ -27,13 +28,7 @@ export default function useActionPlan() {
 
                 corrective_action,
 
-                start_date: start_date
-                    ? start_date.toISOString().split("T")[0]
-                    : null,
-
-                target_date: target_date
-                    ? target_date.toISOString().split("T")[0]
-                    : null,
+                due_date: formatDateForApi(due_date),
 
                 status: "draft"
             });

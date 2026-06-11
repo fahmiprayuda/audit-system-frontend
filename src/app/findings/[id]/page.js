@@ -225,33 +225,19 @@ export default function FindingDetailPage() {
                 }
               />
 
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Timeline
-                </label>
-
-                <DatePicker
-                  selectsRange
-                  startDate={newPlan.start_date}
-                  endDate={newPlan.target_date}
-                  onChange={(dates) => {
-                    const [start, end] = dates;
-
-                    setNewPlan((prev) => ({
-                      ...prev,
-                      start_date: start,
-                      target_date: end,
-                    }));
-                  }}
-                  isClearable
-                  monthsShown={2}
-                  dateFormat="dd MMM yyyy"
-                  placeholderText="Select timeline"
-                  wrapperClassName="w-full"
-                  className="w-full border border-slate-300 px-4 py-3 rounded-xl"
-                />
-
-              </div>
+              <DatePicker
+                selected={newPlan.due_date}
+                onChange={(date) =>
+                  setNewPlan(prev => ({
+                    ...prev,
+                    due_date: date,
+                  }))
+                }
+                dateFormat="dd MMM yyyy"
+                placeholderText="Select due date"
+                wrapperClassName="w-full"
+                className="w-full border border-slate-300 px-4 py-3 rounded-xl"
+              />
 
               <div className="flex justify-end gap-2 mt-4">
                 <button
@@ -277,8 +263,7 @@ export default function FindingDetailPage() {
                       finding_department_id: fdId || "",
                       root_cause: "",
                       corrective_action: "",
-                      start_date: null,
-                      target_date: null,
+                      due_date: null,
                     });
 
                   }}

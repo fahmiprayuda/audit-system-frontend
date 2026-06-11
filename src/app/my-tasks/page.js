@@ -136,7 +136,7 @@ export default function MyTasksPage() {
                                 </td>
 
                                 <td className="p-4">
-                                    {formatDate(task.target_date)}
+                                    {formatDate(task.due_date)}
                                 </td>
 
                             </tr>
