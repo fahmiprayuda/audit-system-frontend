@@ -5,12 +5,54 @@ import api from "@/lib/axios";
 
 export default function UsersPage() {
 
+    const [showResetPassword,
+        setShowResetPassword] =
+        useState(false);
+
+    const [selectedUser,
+        setSelectedUser] =
+        useState(null);
+
+    const [newPassword,
+        setNewPassword] =
+        useState("");
+
+    const openResetPassword = (
+        user
+    ) => {
+
+        setSelectedUser(user);
+
+        setNewPassword("");
+
+        setShowResetPassword(true);
+
+    };
+
+    const resetPassword =
+        async () => {
+
+            if (newPassword.length < 6) {
+                return alert("Password minimal 6 karakter");
+            }
+
+            await api.post(
+                `/users/${selectedUser.id}/reset-password`,
+                {
+                    password: newPassword
+                }
+            );
+
+            alert(
+                "Password updated"
+            );
+
+            setShowResetPassword(false);
+
+        };
+
     const [users, setUsers] =
         useState([]);
-
-    useEffect(() => {
-        loadUsers();
-    }, []);
 
     const loadUsers = async () => {
 
@@ -68,7 +110,9 @@ export default function UsersPage() {
 
             await api.post("/users", payload);
 
-            setShowCreate(false);
+            alert("User created successfully");
+
+            closeModal();
 
             loadUsers();
 
@@ -82,6 +126,94 @@ export default function UsersPage() {
 
         };
 
+    const [editingUser, setEditingUser] =
+        useState(null);
+
+    const editUser = (user) => {
+
+        setEditingUser(user);
+
+        setForm({
+            name: user.name,
+            email: user.email,
+            password: "",
+            role: user.role,
+            department_id:
+                user.department_id || ""
+        });
+
+        setShowCreate(true);
+    };
+    const deleteUser = async (id) => {
+
+        if (
+            !confirm(
+                "Delete this user?"
+            )
+        ) return;
+
+        try {
+
+            await api.delete(
+                `/users/${id}`
+            );
+
+            alert("Deleted Successfully");
+
+            loadUsers();
+
+        } catch (err) {
+
+            alert(
+                err.response?.data?.message ||
+                "Failed"
+            );
+
+        }
+    };
+
+    const updateUser = async () => {
+
+        try {
+
+            await api.put(
+                `/users/${editingUser.id}`,
+                form
+            );
+
+            alert("Updated");
+
+            closeModal();
+
+            setEditingUser(null);
+
+            loadUsers();
+
+        } catch (err) {
+
+            alert(
+                err.response?.data?.message ||
+                "Failed"
+            );
+
+        }
+
+    };
+
+    const closeModal = () => {
+        setShowCreate(false);
+
+        setEditingUser(null);
+
+        setForm({
+            name: "",
+            email: "",
+            password: "",
+            role: "auditee",
+            department_id: ""
+        });
+    };
+
 
     return (
         <div className="p-6">
@@ -93,7 +225,10 @@ export default function UsersPage() {
                 </h1>
 
                 <button
-                    onClick={() => setShowCreate(true)}
+                    onClick={() => {
+                        closeModal();
+                        setShowCreate(true);
+                    }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition">
                     + User
                 </button>
@@ -108,6 +243,7 @@ export default function UsersPage() {
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Email</th>
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Role</th>
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Department</th>
+                            <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Actions</th>
                         </tr>
                     </thead>
 
@@ -122,6 +258,27 @@ export default function UsersPage() {
                                         {user.department?.name}
                                     </span>
                                 </td>
+                                <td className="p-4 flex gap-3">
+
+                                    <button
+                                        onClick={() => editUser(user)}
+                                    >
+                                        ✏️
+                                    </button>
+
+                                    <button
+                                        onClick={() => openResetPassword(user)}
+                                    >
+                                        🔑
+                                    </button>
+
+                                    <button
+                                        onClick={() => deleteUser(user.id)}
+                                    >
+                                        🗑️
+                                    </button>
+
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -135,7 +292,9 @@ export default function UsersPage() {
                     <div className="bg-white p-6 rounded-xl w-[500px]">
 
                         <h2 className="text-2xl font-bold mb-6">
-                            Create User
+                            {editingUser
+                                ? "Edit User"
+                                : "Create User"}
                         </h2>
 
                         <label className="text-md font-medium mb-2 block">Full Name</label>
@@ -162,18 +321,22 @@ export default function UsersPage() {
                             }
                         />
 
-                        <label className="text-md font-medium mb-2 block">Password</label>
-                        <input className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            type="password"
-                            placeholder="Password"
-                            value={form.password}
-                            onChange={(e) =>
-                                setForm({
-                                    ...form,
-                                    password: e.target.value
-                                })
-                            }
-                        />
+                        {!editingUser && (
+                            <label className="text-md font-medium mb-2 block">Password</label>
+                        )}
+                        {!editingUser && (
+                            <input className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                type="password"
+                                placeholder="Password"
+                                value={form.password}
+                                onChange={(e) =>
+                                    setForm({
+                                        ...form,
+                                        password: e.target.value
+                                    })
+                                }
+                            />
+                        )}
 
                         <label className="text-md font-medium mb-2 block">Role  </label>
                         <select className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -239,14 +402,16 @@ export default function UsersPage() {
 
                             <button
                                 onClick={() =>
-                                    setShowCreate(false)
+                                    closeModal()
                                 }
                                 className="border px-5 py-2.5 rounded-xl">
                                 Cancel
                             </button>
 
                             <button
-                                onClick={createUser}
+                                onClick={editingUser
+                                    ? updateUser
+                                    : createUser}
                                 className="bg-blue-600 text-white px-5 py-2.5 rounded-xl ">
                                 Save
                             </button>
@@ -258,6 +423,61 @@ export default function UsersPage() {
                 </div>
             )}
             {/* End Modal */}
+
+            {/* Start Modal Change Password */}
+            {showResetPassword && (
+
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+
+                    <div className="bg-white p-6 rounded-xl w-[400px]">
+
+                        <h2 className="text-xl font-bold mb-4">
+                            Reset Password
+                        </h2>
+
+                        <p className="mb-2 text-gray-500">
+                            {selectedUser?.name}
+                        </p>
+
+                        <input
+                            type="password"
+                            placeholder="New Password"
+                            value={newPassword}
+                            onChange={(e) =>
+                                setNewPassword(
+                                    e.target.value
+                                )
+                            }
+                            className="w-full border p-3 rounded mb-4"
+                        />
+
+                        <div className="flex justify-end gap-2">
+
+                            <button
+                                onClick={() =>
+                                    setShowResetPassword(false)
+                                }
+                                className="border px-4 py-2 rounded"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={resetPassword}
+                                className="bg-blue-600 text-white px-4 py-2 rounded"
+                            >
+                                Save
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
+            {/* End Modal Change Password */}
 
         </div>
     );
