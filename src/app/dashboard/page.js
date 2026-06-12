@@ -3,64 +3,22 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 
-import StatusBadge from "@/components/badges/StatusBadge";
-
 import {
-    PieChart,
-    Pie,
-    Cell,
+    ResponsiveContainer,
     BarChart,
     Bar,
-    ResponsiveContainer,
     XAxis,
     YAxis,
     Tooltip,
 } from "recharts";
 
-const COLORS = [
-    "#f59e0b",
-    "#3b82f6",
-    "#22c55e",
-    "#ef4444",
-];
-
-/* =========================
-   helpers
-========================= */
-
-function mapStatus(status) {
-    const map = {
-        draft: "Open",
-        submitted: "Need Further Review",
-        need_revision:
-            "Need Further Review",
-        approved: "Closed",
-    };
-
-    return map[status] || status;
-}
-
-function formatDate(date) {
-    if (!date) return "-";
-
-    return new Date(
-        date
-    ).toLocaleDateString(
-        "id-ID",
-        {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-        }
-    );
-}
-
 export default function DashboardPage() {
+
+    const [loading, setLoading] =
+        useState(true);
+
     const [summary, setSummary] =
         useState(null);
-
-    const [statusData, setStatusData] =
-        useState([]);
 
     const [
         departmentData,
@@ -68,39 +26,34 @@ export default function DashboardPage() {
     ] = useState([]);
 
     const [
-        overduePlans,
-        setOverduePlans,
+        topFindings,
+        setTopFindings,
     ] = useState([]);
 
-    const [loading, setLoading] =
-        useState(true);
-
     useEffect(() => {
-        fetchDashboard();
+        loadDashboard();
     }, []);
 
-    async function fetchDashboard() {
+    async function loadDashboard() {
+
         try {
+
             const [
                 summaryRes,
-                statusRes,
-                deptRes,
-                overdueRes,
+                departmentRes,
+                findingsRes,
             ] = await Promise.all([
+
                 api.get(
-                    "/dashboard/summary"
+                    "/dashboard/executive-summary"
                 ),
 
                 api.get(
-                    "/dashboard/action-plans-by-status"
+                    "/dashboard/overdue-findings-by-department"
                 ),
 
                 api.get(
-                    "/dashboard/overdue-by-department"
-                ),
-
-                api.get(
-                    "/dashboard/overdue-action-plans"
+                    "/dashboard/top-overdue-findings"
                 ),
             ]);
 
@@ -108,71 +61,22 @@ export default function DashboardPage() {
                 summaryRes.data
             );
 
-            /* pie chart merge statuses */
-            const mergedStatus = {
-                Open: 0,
-                "Need Further Review":
-                    0,
-                Closed: 0,
-            };
-
-            statusRes.data.forEach(
-                (item) => {
-                    const name =
-                        mapStatus(
-                            item.status
-                        );
-
-                    mergedStatus[
-                        name
-                    ] += item.total;
-                }
-            );
-
-            setStatusData([
-                {
-                    name: "Open",
-                    value:
-                        mergedStatus.Open,
-                },
-                {
-                    name:
-                        "Need Further Review",
-                    value:
-                        mergedStatus[
-                        "Need Further Review"
-                        ],
-                },
-                {
-                    name: "Closed",
-                    value:
-                        mergedStatus.Closed,
-                },
-            ]);
-
             setDepartmentData(
-                deptRes.data
+                departmentRes.data
             );
 
-            /* map overdue status */
-            const mappedOverdue =
-                overdueRes.data.map(
-                    (item) => ({
-                        ...item,
-                        status:
-                            mapStatus(
-                                item.status
-                            ),
-                    })
-                );
-
-            setOverduePlans(
-                mappedOverdue
+            setTopFindings(
+                findingsRes.data
             );
+
         } catch (err) {
+
             console.error(err);
+
         } finally {
+
             setLoading(false);
+
         }
     }
 
@@ -184,291 +88,312 @@ export default function DashboardPage() {
         );
     }
 
-    const summaryCards = [
+    const cards = [
+
         {
-            title: "Open",
+            title:
+                "Total Findings",
             value:
-                summary?.draft || 0,
+                summary?.total_findings || 0,
             color:
-                "bg-amber-100 text-amber-700",
+                "bg-slate-100 text-slate-700",
+            icon: "📋",
         },
 
         {
-            title: "Need Further Review",
+            title:
+                "Open Findings",
             value:
-                (summary?.submitted ||
-                    0) +
-                (summary?.need_revision ||
-                    0),
-            color:
-                "bg-blue-100 text-blue-700",
-        },
-
-        {
-            title: "Closed",
-            value:
-                summary?.approved ||
-                0,
-            color:
-                "bg-green-100 text-green-700",
-        },
-
-        {
-            title: "Overdue",
-            value:
-                summary?.overdue ||
-                0,
+                summary?.open_findings || 0,
             color:
                 "bg-red-100 text-red-700",
+            icon: "🔥",
+        },
+
+        {
+            title:
+                "Due Soon",
+            value:
+                summary?.due_soon || 0,
+            color:
+                "bg-amber-100 text-amber-700",
+            icon: "⚠️",
+        },
+
+        {
+            title:
+                "Closed Findings",
+            value:
+                summary?.closed_findings || 0,
+            color:
+                "bg-green-100 text-green-700",
+            icon: "✅",
         },
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50 p-6">
-            <div className="mx-auto max-w-7xl space-y-6">
 
-                {/* header */}
+        <div className="p-6 bg-slate-50 min-h-screen">
+
+            <div className="max-w-7xl mx-auto space-y-6">
+
+                {/* Header */}
+
                 <div>
+
                     <h1 className="text-3xl font-bold text-slate-800">
-                        Internal Audit
-                        Dashboard
+
+                        Executive Dashboard
+
                     </h1>
 
-                    <p className="mt-1 text-slate-500">
-                        Monitor
-                        action plans &
-                        audit progress
+                    <p className="text-slate-500 mt-1">
+
+                        Internal Audit Monitoring
+
                     </p>
+
                 </div>
 
-                {/* cards */}
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    {summaryCards.map(
-                        (card) => (
-                            <div
-                                key={
-                                    card.title
-                                }
-                                className="rounded-2xl bg-white p-5 shadow-sm border"
-                            >
-                                <p className="text-sm text-slate-500">
-                                    {
-                                        card.title
-                                    }
-                                </p>
+                {/* Summary Cards */}
 
-                                <div className="mt-3 flex items-center justify-between">
-                                    <p className="text-3xl font-bold text-slate-800">
-                                        {
-                                            card.value
-                                        }
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+                    {cards.map((card) => (
+
+                        <div
+                            key={card.title}
+                            className="bg-white rounded-2xl border shadow-sm p-5"
+                        >
+
+                            <div className="flex justify-between items-center">
+
+                                <div>
+
+                                    <p className="text-sm text-slate-500">
+
+                                        {card.title}
+
                                     </p>
 
-                                    <span
-                                        className={`rounded-full px-3 py-1 text-sm font-medium ${card.color}`}
-                                    >
-                                        {
-                                            card.title
-                                        }
-                                    </span>
+                                    <h2 className="text-3xl font-bold mt-2">
+
+                                        {card.value}
+
+                                    </h2>
+
                                 </div>
-                            </div>
-                        )
-                    )}
-                </div>
 
-                {/* charts */}
-                <div className="grid gap-6 lg:grid-cols-2">
-
-                    {/* donut */}
-                    <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                        <h2 className="mb-4 text-lg font-semibold">
-                            Action Plan
-                            Status
-                        </h2>
-
-                        <div className="h-72">
-                            <ResponsiveContainer
-                                width="100%"
-                                height="100%"
-                            >
-                                <PieChart>
-                                    <Pie
-                                        data={
-                                            statusData
-                                        }
-                                        dataKey="value"
-                                        innerRadius={
-                                            65
-                                        }
-                                        outerRadius={
-                                            95
-                                        }
-                                    >
-                                        {statusData.map(
-                                            (
-                                                _,
-                                                index
-                                            ) => (
-                                                <Cell
-                                                    key={
-                                                        index
-                                                    }
-                                                    fill={
-                                                        COLORS[
-                                                        index %
-                                                        COLORS.length
-                                                        ]
-                                                    }
-                                                />
-                                            )
-                                        )}
-                                    </Pie>
-
-                                    <Tooltip />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* bar */}
-                    <div className="rounded-2xl border bg-white p-6 shadow-sm">
-                        <h2 className="mb-4 text-lg font-semibold">
-                            Overdue by
-                            Department
-                        </h2>
-
-                        <div className="h-72">
-                            <ResponsiveContainer
-                                width="100%"
-                                height="100%"
-                            >
-                                <BarChart
-                                    data={
-                                        departmentData
-                                    }
+                                <span
+                                    className={`px-3 py-2 rounded-xl text-lg ${card.color}`}
                                 >
-                                    <XAxis dataKey="name" />
 
-                                    <YAxis />
+                                    {card.icon}
 
-                                    <Tooltip />
+                                </span>
 
-                                    <Bar
-                                        dataKey="total"
-                                        radius={[
-                                            8,
-                                            8,
-                                            0,
-                                            0,
-                                        ]}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
+                            </div>
+
                         </div>
-                    </div>
+
+                    ))}
+
                 </div>
 
-                {/* table */}
-                <div className="rounded-2xl border bg-white shadow-sm">
+                {/* Chart + Top Findings */}
 
-                    <div className="border-b p-5">
-                        <h2 className="text-lg font-semibold">
-                            Overdue
-                            Action Plans
+                {/* Chart */}
+
+                <div className="xl:col-span-1 bg-white rounded-2xl border shadow-sm p-5">
+
+                    <h2 className="font-semibold text-lg mb-4">
+
+                        Overdue Findings by Department
+
+                    </h2>
+
+                    <div className="h-[200px]">
+
+                        <ResponsiveContainer
+                            width="100%"
+                            height="100%"
+                        >
+
+                            <BarChart
+                                layout="vertical"
+                                data={departmentData}
+                            >
+                                <XAxis type="number" allowDecimals={false}
+                                    tickCount={21} />
+
+                                <YAxis
+                                    type="category"
+                                    dataKey="name"
+                                    width={200}
+                                />
+
+                                <Tooltip />
+
+                                <Bar
+                                    dataKey="overdue_findings"
+                                    fill="salmon"
+                                    radius={[0, 8, 8, 0]}
+                                />
+                            </BarChart>
+
+                        </ResponsiveContainer>
+
+                    </div>
+
+                </div>
+
+                {/* Top Overdue */}
+
+                <div className="xl:col-span-2 bg-white rounded-2xl border shadow-sm overflow-hidden">
+
+                    <div className="p-5 border-b">
+
+                        <h2 className="font-semibold text-lg">
+
+                            Top Overdue Findings 🔥
+
                         </h2>
+
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="min-w-full text-sm">
+
+                        <table className="w-full text-sm">
+
                             <thead className="bg-slate-50">
+
                                 <tr>
-                                    <th className="px-5 py-3 text-left">
+
+                                    <th className="p-3 text-left">
+
                                         Finding
+
                                     </th>
 
-                                    <th className="px-5 py-3 text-left">
+                                    <th className="p-3 text-left">
+
                                         Department
+
                                     </th>
 
-                                    <th className="px-5 py-3 text-left">
-                                        Due
+                                    <th className="p-3 text-center">
+
+                                        Days Overdue
+
                                     </th>
 
-                                    <th className="px-5 py-3 text-left">
-                                        Status
+                                    <th className="p-3 text-center">
+
+                                        Open Actions
+
                                     </th>
+
                                 </tr>
+
                             </thead>
 
                             <tbody>
-                                {overduePlans
-                                    .length ===
-                                    0 ? (
+
+                                {topFindings.length === 0 ? (
+
                                     <tr>
+
                                         <td
-                                            colSpan={
-                                                4
-                                            }
-                                            className="px-5 py-8 text-center text-slate-500"
+                                            colSpan={4}
+                                            className="text-center p-8 text-slate-500"
                                         >
-                                            No
-                                            overdue
-                                            action
-                                            plans
+
+                                            No overdue findings
+
                                         </td>
+
                                     </tr>
+
                                 ) : (
-                                    overduePlans.map(
-                                        (
-                                            item
-                                        ) => (
+
+                                    topFindings.map(
+                                        (item) => (
+
                                             <tr
-                                                key={
-                                                    item.id
-                                                }
+                                                key={item.id}
                                                 className="border-t hover:bg-slate-50"
                                             >
-                                                <td className="px-5 py-4 font-medium">
-                                                    {
-                                                        item
-                                                            .finding_department
-                                                            ?.finding
-                                                            ?.title
-                                                    }
-                                                </td>
 
-                                                <td className="px-5 py-4">
-                                                    {
-                                                        item
-                                                            .finding_department
-                                                            ?.department
-                                                            ?.name
-                                                    }
-                                                </td>
+                                                <td className="p-3">
 
-                                                <td className="px-5 py-4">
-                                                    {formatDate(
-                                                        item.due_date
-                                                    )}
-                                                </td>
+                                                    <div className="font-medium">
 
-                                                <td className="px-5 py-4">
-                                                    <StatusBadge
-                                                        status={
-                                                            item.status
+                                                        {
+                                                            item.finding_code
                                                         }
-                                                    />
+
+                                                    </div>
+
+                                                    <div className="text-slate-500 text-xs">
+
+                                                        {
+                                                            item.title
+                                                        }
+
+                                                    </div>
+
                                                 </td>
+
+                                                <td className="p-3">
+
+                                                    {
+                                                        item.departments
+                                                    }
+
+                                                </td>
+
+                                                <td className="p-3 text-center">
+
+                                                    <span className="px-2 py-1 rounded-lg bg-red-100 text-red-700 font-medium">
+
+                                                        {
+                                                            item.days_overdue
+                                                        } Days
+
+                                                    </span>
+
+                                                </td>
+
+                                                <td className="p-3 text-center">
+
+                                                    <span className="px-2 py-1 rounded-lg bg-amber-100 text-amber-700 font-medium">
+
+                                                        {
+                                                            item.overdue_actions
+                                                        }
+
+                                                    </span>
+
+                                                </td>
+
                                             </tr>
+
                                         )
                                     )
+
                                 )}
+
                             </tbody>
+
                         </table>
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
+
     );
 }
