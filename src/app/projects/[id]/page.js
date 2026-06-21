@@ -146,10 +146,9 @@ export default function ProjectPage() {
     findings: findings.length,
     departments: allDepartments.length,
     actionPlans: allAP.length,
-    draft: allAP.filter(a => a.status === "draft").length,
+    need_further_review: allAP.filter(a => a.status === "need_further_review").length,
     submitted: allAP.filter(a => a.status === "submitted").length,
-    needRevision: allAP.filter(a => a.status === "need_revision").length,
-    approved: allAP.filter(a => a.status === "approved").length,
+    closed: allAP.filter(a => a.status === "closed").length,
   };
 
   return (
@@ -195,9 +194,8 @@ export default function ProjectPage() {
         <Card title="Findings" value={summary.findings} />
         <Card title="Departments" value={summary.departments} />
         <Card title="AP" value={summary.actionPlans} />
-        <Card title="Draft / Open" value={summary.draft} />
-        <Card title="NFR" value={summary.submitted} />
-        <Card title="Closed" value={summary.approved} />
+        <Card title="NFR" value={summary.need_further_review} />
+        <Card title="Closed" value={summary.closed} />
         <Card title="Verified" value={summary.verified} />
       </div>
 

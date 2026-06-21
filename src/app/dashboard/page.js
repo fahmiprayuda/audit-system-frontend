@@ -4,6 +4,7 @@ import { formatDate } from "@/utils/date";
 
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
+import StatusBadge from "@/components/badges/StatusBadge";
 
 import {
     ResponsiveContainer,
@@ -191,7 +192,7 @@ export default function DashboardPage() {
                 <div className="xl:col-span-2 bg-white rounded-2xl border shadow-sm overflow-hidden">
                     <div className="p-5 border-b">
                         <h2 className="font-semibold text-lg">
-                            Top Overdue Findings 🔥
+                            Top Overdue Findings
                         </h2>
                     </div>
                     <div className="overflow-x-auto">
@@ -218,8 +219,8 @@ export default function DashboardPage() {
                             <tbody>
                                 {topFindings.length === 0 ? (
                                     <tr>
-                                        <td colSpan={4} className="text-center p-8 text-slate-500">
-                                            No overdue findings
+                                        <td colSpan={6} className="text-center p-8 text-slate-500">
+                                            No overdue findings 🔥
                                         </td>
                                     </tr>
                                 ) : (
@@ -277,13 +278,14 @@ export default function DashboardPage() {
                                     <th rowSpan={2} className="p-4 text-left">Project</th>
                                     <th rowSpan={2} className="p-4 text-center">Total Findings</th>
                                     <th colSpan={2} className="p-4 text-center">Risk Category</th>
-                                    <th colSpan={2} className="p-4 text-center">Status</th>
+                                    <th colSpan={3} className="p-4 text-center">Status</th>
                                     {/* <th rowSpan={2} className="p-4 text-center">Progress</th> */}
                                     <th rowSpan={2} className="p-4 text-center">Action</th>
                                 </tr>
                                 <tr>
                                     <th className="p-4 text-center">Significant</th>
                                     <th className="p-4 text-center">Moderate</th>
+                                    <th className="p-4 text-center">In Progress</th>
                                     <th className="p-4 text-center">Open</th>
                                     <th className="p-4 text-center">Closed</th>
                                 </tr>
@@ -302,6 +304,9 @@ export default function DashboardPage() {
                                         </td>
                                         <td className="p-4 text-center">
                                             <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700">{item.moderate_findings}</span>
+                                        </td>
+                                        <td className="p-4 text-center">
+                                            <span className="px-2 py-1 rounded bg-red-100 text-red-700">{item.nfr_findings}</span>
                                         </td>
                                         <td className="p-4 text-center">
                                             <span className="px-2 py-1 rounded bg-red-100 text-red-700">{item.open_findings}</span>
@@ -338,153 +343,6 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Start Modal Detail Project */}
-            {showProjectModal && (
-
-                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-
-                    <div className="bg-white rounded-xl w-[1000px] max-h-[80vh] overflow-auto">
-
-                        <div className="p-5 border-b flex justify-between">
-
-                            <div>
-
-                                <h2 className="font-bold text-xl">
-
-                                    {selectedProject?.project_code}
-
-                                </h2>
-
-                                <p className="text-gray-500">
-
-                                    {selectedProject?.project_name}
-
-                                </p>
-
-                            </div>
-
-                            <button
-                                onClick={() =>
-                                    setShowProjectModal(false)
-                                }
-                            >
-                                ❌
-                            </button>
-
-                        </div>
-
-                        <div className="p-5">
-
-                            <table className="w-full">
-
-                                <thead className="bg-slate-50">
-
-                                    <tr>
-
-                                        <th className="p-3 text-left">
-                                            Finding
-                                        </th>
-
-                                        <th className="p-3 text-center">
-                                            Risk
-                                        </th>
-
-                                        <th className="p-3 text-center">
-                                            Category
-                                        </th>
-
-                                        <th className="p-3 text-center">
-                                            Status
-                                        </th>
-
-                                        <th className="p-3 text-center">
-                                            Action
-                                        </th>
-
-                                    </tr>
-
-                                </thead>
-
-                                <tbody>
-
-                                    {selectedProject?.findings?.map(
-                                        (finding) => (
-
-                                            <tr
-                                                key={finding.id}
-                                                className="border-t"
-                                            >
-
-                                                <td className="p-3">
-
-                                                    <div className="font-medium">
-
-                                                        {finding.finding_code}
-
-                                                    </div>
-
-                                                    <div className="text-xs text-slate-500">
-
-                                                        {finding.title}
-
-                                                    </div>
-
-                                                </td>
-
-                                                <td className="p-3 text-center">
-
-                                                    {finding.risk_rating}
-
-                                                </td>
-
-                                                <td className="p-3 text-center">
-
-                                                    {finding.risk_category}
-
-                                                </td>
-
-                                                <td className="p-3 text-center">
-
-                                                    {finding.status}
-
-                                                </td>
-
-                                                <td className="p-3 text-center">
-
-                                                    <button
-                                                        onClick={() => {
-
-                                                            setShowProjectModal(false);
-
-                                                            openDetail(
-                                                                finding.id
-                                                            );
-
-                                                        }}
-                                                        className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm"
-                                                    >
-                                                        View
-                                                    </button>
-
-                                                </td>
-
-                                            </tr>
-
-                                        ))}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            )}
-            {/* End Modal Detail Project */}
 
             {/* Start Modal Detail Finding */}
             {showModal && (
@@ -529,38 +387,54 @@ export default function DashboardPage() {
                                 </thead>
 
                                 <tbody>
-                                    {selectedFinding?.actions?.map(
-                                        (action) => (
-                                            <tr
-                                                key={action.id}
-                                                className="border-b hover:bg-slate-50"
+                                    {selectedFinding?.actions?.length === 0 ? (
+                                        <tr>
+                                            <td
+                                                colSpan="4"
+                                                className="px-4 py-4 text-center"
                                             >
-                                                <td className="px-4 py-4">
-                                                    {action.department}
-                                                </td>
+                                                Not yet due 🔥
+                                            </td>
+                                        </tr>
 
-                                                <td className="px-4 py-4">
-                                                    {action.root_cause}
-                                                </td>
+                                    ) : (
 
-                                                <td className="px-4 py-4 text-center">
-                                                    {formatDate(
-                                                        action.due_date
-                                                    )}
-                                                </td>
+                                        selectedFinding?.actions?.map(
+                                            (action) => (
+                                                <tr
+                                                    key={action.id}
+                                                    className="border-b hover:bg-slate-50"
+                                                >
+                                                    <td className="px-4 py-4">
+                                                        {action.department}
+                                                    </td>
 
-                                                <td className="px-4 py-4 text-center">
-                                                    {action.days_overdue > 0 ? (
-                                                        <span className="inline-flex px-3 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-                                                            {action.days_overdue} Days
-                                                        </span>
-                                                    ) : (
-                                                        "-"
-                                                    )}
-                                                </td>
-                                            </tr>
+                                                    <td className="px-4 py-4">
+                                                        {action.root_cause}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center">
+                                                        {formatDate(
+                                                            action.due_date
+                                                        )}
+                                                    </td>
+
+                                                    <td className="px-4 py-4 text-center">
+                                                        {action.days_overdue > 0 ? (
+                                                            <span className="inline-flex px-3 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+                                                                {action.days_overdue} Days
+                                                            </span>
+                                                        ) : (
+                                                            "-"
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )
                                         )
+
                                     )}
+
+
                                 </tbody>
                             </table>
                         </div>
@@ -568,6 +442,76 @@ export default function DashboardPage() {
                 </div>
             )}
             {/* End Modal Detail Finding */}
+
+            {/* Start Modal Detail Project */}
+            {showProjectModal && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl w-[1000px] max-h-[80vh] overflow-auto">
+                        <div className="p-5 border-b flex justify-between">
+                            <div>
+                                <h2 className="font-bold text-xl">{selectedProject?.project_code}</h2>
+                                <p className="text-gray-500">{selectedProject?.project_name}</p>
+                            </div>
+                            <button onClick={() => setShowProjectModal(false)}>❌</button>
+                        </div>
+
+                        <div className="p-5">
+                            <table className="w-full">
+                                <thead className="bg-slate-50">
+                                    <tr>
+                                        <th className="p-3 text-left">Finding</th>
+                                        <th className="p-3 text-center">Risk</th>
+                                        <th className="p-3 text-center">Category</th>
+                                        <th className="p-3 text-center">Status</th>
+                                        <th className="p-3 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+
+                                    {selectedProject?.findings?.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" className="p-3 text-center">
+                                                No findings found.
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        selectedProject?.findings?.map(
+                                            (finding) => (
+
+                                                <tr key={finding.id} className="border-t">
+                                                    <td className="p-3">
+                                                        <div className="font-medium">{finding.finding_code}</div>
+                                                        <div className="text-xs text-slate-500">{finding.title}</div>
+                                                    </td>
+                                                    <td className="p-3 text-center">{finding.risk_rating}</td>
+                                                    <td className="p-3 text-center">{finding.risk_category}</td>
+                                                    <td className="p-3 text-center"><StatusBadge status={finding.status} /></td>
+                                                    <td className="p-3 text-center">
+                                                        <button
+                                                            onClick={() => {
+                                                                setShowProjectModal(false);
+                                                                openDetail(
+                                                                    finding.id
+                                                                );
+                                                            }}
+                                                            className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm">
+                                                            View
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )
+
+                                        )
+                                    )
+                                    }
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* End Modal Detail Project */}
         </div>
 
     );

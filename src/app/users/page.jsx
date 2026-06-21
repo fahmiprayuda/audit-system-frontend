@@ -259,25 +259,9 @@ export default function UsersPage() {
                                     </span>
                                 </td>
                                 <td className="p-4 flex gap-3">
-
-                                    <button
-                                        onClick={() => editUser(user)}
-                                    >
-                                        ✏️
-                                    </button>
-
-                                    <button
-                                        onClick={() => openResetPassword(user)}
-                                    >
-                                        🔑
-                                    </button>
-
-                                    <button
-                                        onClick={() => deleteUser(user.id)}
-                                    >
-                                        🗑️
-                                    </button>
-
+                                    <button onClick={() => editUser(user)}>✏️</button>
+                                    <button onClick={() => openResetPassword(user)}>🔑</button>
+                                    <button onClick={() => deleteUser(user.id)}>🗑️</button>
                                 </td>
                             </tr>
                         ))}
@@ -292,10 +276,7 @@ export default function UsersPage() {
                     <div className="bg-white p-6 rounded-xl w-[500px]">
 
                         <h2 className="text-2xl font-bold mb-6">
-                            {editingUser
-                                ? "Edit User"
-                                : "Create User"}
-                        </h2>
+                            {editingUser ? "Edit User" : "Create User"}</h2>
 
                         <label className="text-md font-medium mb-2 block">Full Name</label>
                         <input className="w-full mb-6 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -356,19 +337,12 @@ export default function UsersPage() {
 
                             }}
                         >
-                            <option value="manager">
-                                Manager
-                            </option>
-                            <option value="auditor">
-                                Auditor
-                            </option>
-                            <option value="auditee">
-                                Auditee
-                            </option>
+                            <option value="manager">Manager</option>
+                            <option value="auditor">Auditor</option>
+                            <option value="auditee">Auditee</option>
                         </select>
 
                         {form.role === "auditee" && (
-
                             <select className="w-full mb-10 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 value={form.department_id}
                                 onChange={(e) =>
@@ -378,47 +352,24 @@ export default function UsersPage() {
                                     })
                                 }
                             >
-
-                                <option value="">
-                                    Select Department
-                                </option>
-
+                                <option value="">Select Department</option>
                                 {departments.map(d => (
-
-                                    <option
-                                        key={d.id}
-                                        value={d.id}
-                                    >
+                                    <option key={d.id} value={d.id}>
                                         {d.name}
                                     </option>
-
                                 ))}
-
                             </select>
-
                         )}
 
                         <div className="flex justify-end gap-2 mt-4">
-
-                            <button
-                                onClick={() =>
-                                    closeModal()
-                                }
-                                className="border px-5 py-2.5 rounded-xl">
+                            <button onClick={() => closeModal()} className="border px-5 py-2.5 rounded-xl">
                                 Cancel
                             </button>
-
                             <button
-                                onClick={editingUser
-                                    ? updateUser
-                                    : createUser}
-                                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl ">
+                                onClick={editingUser ? updateUser : createUser} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl ">
                                 Save
                             </button>
-
                         </div>
-
-
                     </div>
                 </div>
             )}
@@ -426,19 +377,10 @@ export default function UsersPage() {
 
             {/* Start Modal Change Password */}
             {showResetPassword && (
-
                 <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-
                     <div className="bg-white p-6 rounded-xl w-[400px]">
-
-                        <h2 className="text-xl font-bold mb-4">
-                            Reset Password
-                        </h2>
-
-                        <p className="mb-2 text-gray-500">
-                            {selectedUser?.name}
-                        </p>
-
+                        <h2 className="text-xl font-bold mb-4">Reset Password</h2>
+                        <p className="mb-2 text-gray-500">{selectedUser?.name}</p>
                         <input
                             type="password"
                             placeholder="New Password"

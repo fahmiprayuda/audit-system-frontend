@@ -3,10 +3,7 @@ export default function StatusBadge({ status }) {
 
   const map = {
     open: "bg-blue-500 text-white",
-    draft: "bg-gray-500",
-    submitted: "bg-blue-600",
-    need_revision: "bg-red-500",
-    approved: "bg-green-600",
+    need_further_review: "bg-gray-500 text-white",
     in_progress: "bg-green-300 text-black",
     closed: "bg-gray-700 text-white",
   };

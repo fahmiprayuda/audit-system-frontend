@@ -74,6 +74,8 @@ export default function useFindingDetail(id, fdId) {
 
             fetchFinding();
 
+            alert("Action Plan Closed!");
+
         } catch (err) {
 
             console.error(

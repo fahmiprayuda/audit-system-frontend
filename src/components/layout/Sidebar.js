@@ -40,18 +40,18 @@ export default function Sidebar() {
       icon: ClipboardList,
       roles: ["manager", "auditor"],
     },
-    {
-      name: "Departments",
-      path: "/departments",
-      icon: Building2,
-      roles: ["manager", "auditor"],
-    },
-    {
-      name: "Reports",
-      path: "/reports",
-      icon: BarChart3,
-      roles: ["manager", "auditor"],
-    },
+    // {
+    //   name: "Departments",
+    //   path: "/departments",
+    //   icon: Building2,
+    //   roles: ["manager", "auditor"],
+    // },
+    // {
+    //   name: "Reports",
+    //   path: "/reports",
+    //   icon: BarChart3,
+    //   roles: ["manager", "auditor"],
+    // },
     {
       name: "My Tasks",
       path: "/my-tasks",

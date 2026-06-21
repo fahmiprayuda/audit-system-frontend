@@ -30,7 +30,7 @@ export default function useActionPlan() {
 
                 due_date: formatDateForApi(due_date),
 
-                status: "draft"
+                status: "need_further_review",
             });
 
             return true;

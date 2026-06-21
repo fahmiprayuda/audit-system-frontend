@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { formatDate } from "@/utils/date";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/badges/StatusBadge";
@@ -26,11 +27,8 @@ export default function ProjectsPage() {
   const [loadingCompanies, setLoadingCompanies] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // ================= FETCH =================
-  useEffect(() => {
-    fetchProjects(currentPage);
-  }, [currentPage]);
 
+  // ================= FETCH =================
   const fetchProjects = async (page = 1) => {
     try {
       setLoading(true);
@@ -52,25 +50,20 @@ export default function ProjectsPage() {
     }
   };
 
+  useEffect(() => {
+    fetchProjects(currentPage);
+  }, [currentPage]);
+
   // ================= DELETE =================
   const deleteProject = async (projectId) => {
-
     if (!confirm("Delete this project?")) return;
-
     try {
-
       await api.delete(`/projects/${projectId}`);
-
       setProjects(prev => prev.filter(p => p.id !== projectId));
-
     } catch (err) {
-
       alert(err.response?.data?.message || "Cannot delete project");
-
     }
-
   };
-
 
   useEffect(() => {
     const fetchCompanies = async () => {
@@ -90,10 +83,8 @@ export default function ProjectsPage() {
 
   // ================= SUBMIT =================
   const submitProject = async () => {
-
     if (!company) return alert("Company wajib dipilih");
     if (!name.trim()) return alert("Project name wajib diisi");
-
 
     setSubmitting(true);
 
@@ -108,13 +99,11 @@ export default function ProjectsPage() {
 
       alert("Project created successfully 🚀");
 
-
       setShowModal(false);   // 👈 TAMBAH INI
 
       setName("");
       setCompany("");
       setReleaseDate("");
-
 
     } catch (err) {
       console.error(err);
@@ -129,44 +118,29 @@ export default function ProjectsPage() {
     }
   };
 
-
   // ================= LOADING =================
   if (loading) {
     return <p className="p-10">Loading projects...</p>;
   }
 
   return (
-
     <div className="p-10 bg-gray-100 min-h-screen">
-
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-8">
-
-        <h1 className="text-3xl font-bold">
-          Audit Projects
-        </h1>
+        <h1 className="text-3xl font-bold">Audit Projects</h1>
 
         <button
           onClick={() => setShowModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
+          className="bg-blue-600 text-white px-4 py-2 rounded">
           + Create Project
         </button>
-
       </div>
 
-      {/* EMPTY */}
-      {projects.length === 0 && (
-        <div className="bg-white p-6 rounded-xl shadow text-gray-500">
-          No projects yet.
-        </div>
-      )}
+      {/* IF IS EMPTY */}
+      {projects.length === 0 && (<div className="bg-white p-6 rounded-xl shadow text-gray-500">No projects yet.</div>)}
 
       {/* TABLE */}
       <div className="bg-white rounded-xl shadow overflow-x-auto">
-
         <table className="w-full text-left">
-
           <thead className="bg-gray-50 border-b">
             <tr>
               <th className="p-4">Code</th>
@@ -179,46 +153,26 @@ export default function ProjectsPage() {
           </thead>
 
           <tbody>
-
             {projects.map(project => (
-
               <tr
                 key={project.id}
                 onClick={(e) => {
                   if (e.target.tagName === "BUTTON") return;
                   router.push(`/projects/${project.id}`);
                 }}
-                className="border-b hover:bg-gray-50 cursor-pointer"
-              >
-
+                className="border-b hover:bg-gray-50 cursor-pointer">
                 {/* CODE */}
-                <td className="p-4 font-medium">
-                  {project.project_code || "-"}
-                </td>
-
+                <td className="p-4 font-medium">{project.project_code || "-"}</td>
                 {/* NAME */}
-                <td className="p-4">
-                  {project.project_name}
-                </td>
-
+                <td className="p-4">{project.project_name}</td>
                 {/* COMPANY */}
-                <td className="p-4">
-                  {project.company?.name || "-"}
-                </td>
-
+                <td className="p-4">{project.company?.name || "-"}</td>
                 {/* STATUS */}
-                <td className="p-4">
-                  <StatusBadge status={project.status} />
-                </td>
-
+                <td className="p-4"><StatusBadge status={project.status} /></td>
                 {/* START */}
-                <td className="p-4">
-                  {formatDate(project.release_date)}
-                </td>
-
+                <td className="p-4">{formatDate(project.release_date)}</td>
                 {/* ACTION */}
                 <td className="p-4">
-
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -231,17 +185,11 @@ export default function ProjectsPage() {
                   >
                     🗑 Delete
                   </button>
-
                 </td>
-
               </tr>
-
             ))}
-
           </tbody>
-
         </table>
-
       </div>
 
       {/* PAGINATION */}
@@ -368,35 +316,4 @@ export default function ProjectsPage() {
     </div>
 
   );
-}
-
-
-
-
-/* ================= DATE ================= */
-
-function formatDate(date) {
-  if (!date) return "-";
-
-  // kalau string dari DB: YYYY-MM-DD
-  if (typeof date === "string") {
-    const [year, month, day] = date.split("-");
-
-    return new Date(
-      Number(year),
-      Number(month) - 1,
-      Number(day)
-    ).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  // kalau Date object
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
