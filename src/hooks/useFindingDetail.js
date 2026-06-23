@@ -9,6 +9,13 @@ export default function useFindingDetail(id, fdId) {
 
     const [expandedPlan, setExpandedPlan] = useState(null);
 
+    const [showExtend, setShowExtend] = useState(null);
+    const [extensionData, setExtensionData] = useState({
+        new_due_date: "",
+        status_after_extension: "open",
+        reason: "",
+    });
+
     const [files, setFiles] = useState({});
 
     const [showApprove, setShowApprove] = useState(null);
@@ -23,6 +30,7 @@ export default function useFindingDetail(id, fdId) {
         corrective_action: "",
         due_date: null,
     });
+
 
     useEffect(() => {
         if (fdId) {
@@ -126,6 +134,34 @@ export default function useFindingDetail(id, fdId) {
         fetchFinding();
     };
 
+    const handleExtend = async (actionPlanId) => {
+        try {
+
+            await api.post(
+                `/action-plans/${actionPlanId}/extend`,
+                extensionData
+            );
+
+            setShowExtend(null);
+
+            setExtensionData({
+                new_due_date: "",
+                status_after_extension: "open",
+                reason: "",
+            });
+
+            alert("Action Plan Extended! Please refresh the page.");
+
+            fetchFinding();
+
+        } catch (err) {
+
+            console.error(err);
+
+            alert("Failed extend");
+        }
+    };
+
     return {
         finding,
         loading,
@@ -152,6 +188,12 @@ export default function useFindingDetail(id, fdId) {
         handleComment,
 
         fetchFinding,
+
+        showExtend,
+        setShowExtend,
+        extensionData,
+        setExtensionData,
+        handleExtend,
     };
 
 }

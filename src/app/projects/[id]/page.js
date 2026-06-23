@@ -121,20 +121,18 @@ export default function ProjectPage() {
 
   const deleteFinding = async (id) => {
     const ok = confirm(
-      "Delete this finding? Related action plans will also be removed."
+      "Delete this finding?"
     );
 
     if (!ok) return;
 
     try {
       await api.delete(`/findings/${id}`);
-
       await fetchData();
-
       alert("Finding deleted 🔥");
     } catch (err) {
       console.error(err);
-      alert("Delete failed");
+      alert(err.response?.data?.message || "Delete failed");
     }
   };
 

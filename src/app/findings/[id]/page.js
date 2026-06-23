@@ -60,6 +60,12 @@ export default function FindingDetailPage() {
 
     fetchFinding,
 
+    showExtend,
+    setShowExtend,
+    extensionData,
+    setExtensionData,
+    handleExtend,
+
   } = useFindingDetail(id, fdId);
 
   if (loading) return <p className="p-10">Loading...</p>;
@@ -178,6 +184,12 @@ export default function FindingDetailPage() {
                     handleSubmitRevision={handleSubmitRevision}
                     showApprove={showApprove}
                     setShowApprove={setShowApprove}
+                    showExtend={showExtend}
+                    setShowExtend={setShowExtend}
+
+                    extensionData={extensionData}
+                    setExtensionData={setExtensionData}
+                    handleExtend={handleExtend}
                   />
                 ))}
               </div>

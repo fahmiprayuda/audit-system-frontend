@@ -27,16 +27,15 @@ export default function ActionPlanCard({
 
   showApprove,
   setShowApprove,
+
+  showExtend,
+  setShowExtend,
+  extensionData,
+  setExtensionData,
+  handleExtend,
 }) {
 
   const currentUserId = getUser()?.id;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const target = new Date(ap.due_date);
-
-  const isOverdue =
-    ap.due_date &&
-    target < today &&
-    ap.status !== "closed";
 
   const bottomRef = useRef(null);
 
@@ -84,11 +83,6 @@ export default function ActionPlanCard({
               ))}
             </div>
 
-            {/* {isOverdue && (
-              <span className="text-red-500 text-sm">
-                ⚠ Overdue
-              </span>
-            )} */}
           </div>
         </div>
 
@@ -232,6 +226,14 @@ export default function ActionPlanCard({
             <div className="border-t bg-slate-50 p-6 flex gap-3 justify-center">
               <button
                 hidden={ap.status === "closed"}
+                onClick={() => setShowExtend(ap.id)}
+                className="bg-amber-500 text-white px-5 py-2 rounded-xl"
+              >
+                Extend Due Date
+              </button>
+
+              <button
+                hidden={ap.status === "closed"}
                 onClick={() =>
                   setShowApprove(ap.id)
                 }
@@ -281,6 +283,112 @@ export default function ActionPlanCard({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Modal Extend Due Date */}
+      {showExtend === ap.id && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+          <div className="bg-white rounded-2xl p-6 w-[600px]">
+
+            <h3 className="text-lg font-semibold">
+              Extend Action Plan
+            </h3>
+
+            <div className="space-y-4 mt-4">
+
+              <div>
+                <label className="text-sm font-medium">
+                  New Due Date
+                </label>
+
+                <input
+                  type="date"
+                  className="w-full border rounded-xl p-3 mt-1"
+                  value={extensionData.new_due_date}
+                  onChange={(e) =>
+                    setExtensionData(prev => ({
+                      ...prev,
+                      new_due_date: e.target.value
+                    }))
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Status After Extension
+                </label>
+
+                <select
+                  className="w-full border rounded-xl p-3 mt-1"
+                  value={extensionData.status_after_extension}
+                  onChange={(e) =>
+                    setExtensionData(prev => ({
+                      ...prev,
+                      status_after_extension:
+                        e.target.value
+                    }))
+                  }
+                >
+                  <option value="open">
+                    Open
+                  </option>
+
+                  <option value="need_further_review">
+                    Need Further Review
+                  </option>
+
+                  <option value="closed">
+                    Closed
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">
+                  Reason
+                </label>
+
+                <textarea
+                  className="w-full border rounded-xl p-3 min-h-[120px] mt-1"
+                  value={extensionData.reason}
+                  onChange={(e) =>
+                    setExtensionData(prev => ({
+                      ...prev,
+                      reason: e.target.value
+                    }))
+                  }
+                />
+              </div>
+
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+
+              <button
+                onClick={() =>
+                  setShowExtend(null)
+                }
+                className="border px-4 py-2 rounded-xl"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() =>
+                  handleExtend(ap.id)
+                }
+                className="bg-blue-600 text-white px-4 py-2 rounded-xl"
+              >
+                Save Extension
+              </button>
+
+            </div>
+
+          </div>
+
         </div>
       )}
 
