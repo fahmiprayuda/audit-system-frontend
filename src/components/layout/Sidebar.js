@@ -23,8 +23,14 @@ export default function Sidebar() {
 
   const menu = [
     {
-      name: "Dashboard",
-      path: "/dashboard",
+      name: "Executive Dashboard",
+      path: "/dashboard/executive-dashboard",
+      icon: LayoutDashboard,
+      roles: ["manager", "auditor"],
+    },
+    {
+      name: "Action Plan Monitoring",
+      path: "/dashboard/action-plan-monitoring",
       icon: LayoutDashboard,
       roles: ["manager", "auditor"],
     },

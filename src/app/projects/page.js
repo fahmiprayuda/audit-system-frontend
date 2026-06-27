@@ -50,6 +50,7 @@ export default function ProjectsPage() {
     }
   };
 
+
   useEffect(() => {
     fetchProjects(currentPage);
   }, [currentPage]);
