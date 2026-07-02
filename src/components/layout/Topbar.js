@@ -18,7 +18,23 @@ import {
   User,
 } from "lucide-react";
 
+import {
+  usePathname,
+  useSearchParams
+} from "next/navigation";
+
 export default function Topbar() {
+
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const currentUrl =
+    pathname +
+    (
+      searchParams.toString()
+        ? `?${searchParams}`
+        : ""
+    );
 
   const [showProfile, setShowProfile] = useState(false);
 
@@ -90,17 +106,32 @@ export default function Topbar() {
     loadNotifications();
   }, []);
 
-  const openNotification =
-    async (notif) => {
+  const readAll = async () => {
+    try {
       await api.post(
-        `/notifications/${notif.id}/read`
+        "/notifications/read-all"
       );
+      loadNotifications();
       loadUnread();
-      setNotifOpen(false);
-      setTimeout(() => {
-        router.push(notif.url);
-      }, 150);
-    };
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const openNotification = async (notif) => {
+    await api.post(
+      `/notifications/${notif.id}/read`
+    );
+    loadUnread();
+    setNotifOpen(false);
+    if (currentUrl === notif.url) {
+      window.dispatchEvent(
+        new Event("refresh-finding")
+      );
+      return;
+    }
+    router.push(notif.url);
+  };
 
   useEffect(() => {
     loadUnread();
@@ -198,6 +229,7 @@ export default function Topbar() {
     }
   };
 
+
   return (
     <header className="ml-20 h-16 bg-white border-b px-6 flex items-center justify-between">
       <h1 className="font-semibold text-lg">Audit Monitoring</h1>
@@ -260,8 +292,23 @@ export default function Topbar() {
         {notifOpen && (
 
           <div className="absolute right-0 top-12 w-96 bg-white border rounded-2xl shadow-xl z-50 overflow-hidden">
-            <div className="p-4 border-b">
-              <h3 className="font-semibold">Notifications</h3>
+            <div className="p-4 border-b flex justify-between items-center">
+              <h3 className="font-semibold">
+                Notifications
+                {count > 0 && (
+                  <span className="ml-2 text-sm text-slate-500">
+                    ({count})
+                  </span>
+                )}
+              </h3>
+              {count > 0 && (
+                <button
+                  onClick={readAll}
+                  className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                >
+                  Read All
+                </button>
+              )}
             </div>
 
             <div className="max-h-96 overflow-y-auto">

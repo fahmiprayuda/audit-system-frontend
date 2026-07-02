@@ -194,7 +194,6 @@ export default function ProjectPage() {
         <Card title="AP" value={summary.actionPlans} />
         <Card title="NFR" value={summary.need_further_review} />
         <Card title="Closed" value={summary.closed} />
-        <Card title="Verified" value={summary.verified} />
       </div>
 
       {/* TABLE */}

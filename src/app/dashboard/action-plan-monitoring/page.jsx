@@ -24,7 +24,7 @@ export default function ActionPlanMonitoring() {
     return (
         <>
 
-            <MonitoringHeader />
+            {/* <MonitoringHeader /> */}
 
             <MonitoringTabs
                 tab={tab}

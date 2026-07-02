@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import StatusBadge from "@/components/badges/StatusBadge";
 import RiskBadge from "@/components/badges/RiskBadge";
@@ -14,17 +15,17 @@ import { getUser, canManageActionPlan } from "@/utils/auth";
 
 export default function FindingDetailPage() {
 
-  //const userRole = "auditor"; // hardcoded for testing, should be from auth context or similar
-  //const userRole = "auditee"; // hardcoded for testing, should be from auth context or similar
-
   const user = getUser();
   const canCreateActionPlan = canManageActionPlan();
 
   const { id } = useParams();
   const searchParams = useSearchParams();
-  const router = useRouter();
-
+  const apId = searchParams.get("ap");
   const fdId = searchParams.get("fd");
+
+  const [showAllPlans, setShowAllPlans] = useState(false);
+
+  const router = useRouter();
 
   const { handleCreatePlan } = useActionPlan();
 
@@ -58,6 +59,9 @@ export default function FindingDetailPage() {
     handleAction,
     handleComment,
 
+    workflowAction,
+    setWorkflowAction,
+
     fetchFinding,
 
     showExtend,
@@ -66,7 +70,7 @@ export default function FindingDetailPage() {
     setExtensionData,
     handleExtend,
 
-  } = useFindingDetail(id, fdId);
+  } = useFindingDetail(id, fdId, apId);
 
   if (loading) return <p className="p-10">Loading...</p>;
   if (!finding) return <p className="p-10">Not found</p>;
@@ -76,6 +80,21 @@ export default function FindingDetailPage() {
   const filteredDepartments = fdId
     ? departments.filter(d => String(d.finding_department_id) === String(fdId))
     : departments;
+
+  const visibleActionPlans = (plans) => {
+
+    if (showAllPlans || !apId) {
+      return plans;
+    }
+
+    const filtered = plans.filter(
+      ap => ap.id === Number(apId)
+    );
+
+    return filtered.length
+      ? filtered
+      : plans;
+  };
 
   return (
     <div className="min-h-screen bg-[#f6f7fb] px-10 py-8">
@@ -143,8 +162,8 @@ export default function FindingDetailPage() {
         </div>
 
         {filteredDepartments.map(fd => {
-
-          const plans = fd.action_plans || [];
+          const allPlans = fd.action_plans || [];
+          const plans = visibleActionPlans(allPlans);
 
           return (
             <div
@@ -157,11 +176,29 @@ export default function FindingDetailPage() {
                   <h3 className="text-2xl font-bold text-slate-800">
                     {fd.name}
                   </h3>
-
-                  <p className="text-sm text-slate-500 mt-1">
-                    {plans.length} Action Plan
-                  </p>
+                  {apId && !showAllPlans ? (
+                    <p className="text-sm text-slate-500 mt-1">
+                      Showing {plans.length} of {allPlans.length} Action Plans
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-500 mt-1">
+                      {allPlans.length} Action Plans
+                    </p>
+                  )}
                 </div>
+
+                {apId && allPlans.length > 1 && (
+
+                  <button
+                    onClick={() => setShowAllPlans(prev => !prev)}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    {showAllPlans
+                      ? "← Focus Selected Action Plan"
+                      : "View All →"}
+                  </button>
+
+                )}
 
               </div>
 
@@ -186,7 +223,8 @@ export default function FindingDetailPage() {
                     setShowApprove={setShowApprove}
                     showExtend={showExtend}
                     setShowExtend={setShowExtend}
-
+                    workflowAction={workflowAction}
+                    setWorkflowAction={setWorkflowAction}
                     extensionData={extensionData}
                     setExtensionData={setExtensionData}
                     handleExtend={handleExtend}

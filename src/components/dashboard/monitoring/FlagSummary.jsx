@@ -28,7 +28,7 @@ export default function FlagSummary({
                     color="text-red-500"
                     bgColor="bg-red-100"
                     footerColor="text-blue-600"
-                    icon={<AlertTriangle size={28} />}
+                    icon={<AlertTriangle size={15} />}
                 />
 
                 <FlagCard
@@ -40,7 +40,7 @@ export default function FlagSummary({
                     color="text-emerald-500"
                     bgColor="bg-emerald-100"
                     footerColor="text-emerald-600"
-                    icon={<CheckCircle2 size={28} />}
+                    icon={<CheckCircle2 size={15} />}
                 />
 
                 <FlagCard
@@ -52,7 +52,7 @@ export default function FlagSummary({
                     color="text-red-500"
                     bgColor="bg-red-100"
                     footerColor="text-slate-500"
-                    icon={<AlertTriangle size={28} />}
+                    icon={<AlertTriangle size={15} />}
                 />
 
                 <FlagCard
@@ -64,7 +64,7 @@ export default function FlagSummary({
                     color="text-orange-500"
                     bgColor="bg-orange-100"
                     footerColor="text-slate-500"
-                    icon={<MapPin size={28} />}
+                    icon={<MapPin size={15} />}
                 />
 
             </div>

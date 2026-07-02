@@ -17,10 +17,10 @@ export default function StatusSummary({
             <div>
                 <div className="flex justify-between items-start">
                     <div>
-                        <h2 className="text-4xl font-bold tracking-wide">
+                        <h2 className="text-3xl font-bold tracking-wide">
                             Action Plan Monitoring Status
                         </h2>
-                        <p className="text-slate-500 mt-3 text-lg">
+                        <p className="text-slate-500 mt-2">
                             Tracking the lifecycle of active action plans
                         </p>
                     </div>

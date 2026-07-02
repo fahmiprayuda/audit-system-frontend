@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 
-export default function useFindingDetail(id, fdId) {
+export default function useFindingDetail(id, fdId, apId) {
     const [finding, setFinding] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -21,6 +21,8 @@ export default function useFindingDetail(id, fdId) {
     const [showApprove, setShowApprove] = useState(null);
 
     const [comments, setComments] = useState({});
+
+    const [workflowAction, setWorkflowAction] = useState({});
 
     const [showModal, setShowModal] = useState(false);
 
@@ -75,6 +77,33 @@ export default function useFindingDetail(id, fdId) {
         }
     }, [id]);
 
+    useEffect(() => {
+        if (finding && apId) {
+            setExpandedPlan(Number(apId));
+        }
+    }, [finding, apId]);
+
+    useEffect(() => {
+
+        const refresh = () => {
+
+            fetchFinding();
+
+        };
+
+        window.addEventListener(
+            "refresh-finding",
+            refresh
+        );
+
+        return () =>
+            window.removeEventListener(
+                "refresh-finding",
+                refresh
+            );
+
+    }, []);
+
     const handleAction = async (type, id) => {
         try {
 
@@ -94,7 +123,10 @@ export default function useFindingDetail(id, fdId) {
         }
     };
 
-    const handleComment = async (actionPlanId) => {
+    const handleComment = async (
+        actionPlanId,
+        workflowAction = ""
+    ) => {
 
         const formData = new FormData();
 
@@ -103,6 +135,15 @@ export default function useFindingDetail(id, fdId) {
             comments[actionPlanId]
         );
 
+        // workflow
+        if (workflowAction) {
+            formData.append(
+                "workflow_action",
+                workflowAction
+            );
+        }
+
+        // attachments
         (files[actionPlanId] || []).forEach(file => {
             formData.append(
                 "attachments[]",
@@ -115,8 +156,7 @@ export default function useFindingDetail(id, fdId) {
             formData,
             {
                 headers: {
-                    "Content-Type":
-                        "multipart/form-data"
+                    "Content-Type": "multipart/form-data"
                 }
             }
         );
@@ -129,6 +169,11 @@ export default function useFindingDetail(id, fdId) {
         setFiles(prev => ({
             ...prev,
             [actionPlanId]: []
+        }));
+
+        setWorkflowAction(prev => ({
+            ...prev,
+            [actionPlanId]: ""
         }));
 
         fetchFinding();
@@ -186,6 +231,9 @@ export default function useFindingDetail(id, fdId) {
 
         handleAction,
         handleComment,
+
+        workflowAction,
+        setWorkflowAction,
 
         fetchFinding,
 
