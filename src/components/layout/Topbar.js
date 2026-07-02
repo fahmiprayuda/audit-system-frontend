@@ -231,7 +231,7 @@ export default function Topbar() {
 
 
   return (
-    <header className="ml-20 h-16 bg-white border-b px-6 flex items-center justify-between">
+    <header className="ml-20 h-16 bg-white border-b px-6 flex items-center justify-between sticky top-0 z-40 bg-white/40 backdrop-blur-md">
       <h1 className="font-semibold text-lg">Audit Monitoring</h1>
 
       <div className="relative flex items-center gap-4 mr-16">
@@ -246,7 +246,7 @@ export default function Topbar() {
               <p className="text-sm font-medium">{mounted ? user?.name || "User" : ""}</p>
               <p className="text-xs text-gray-500">{mounted ? user?.email : ""}</p>
             </div>
-            <ChevronDown size={16} />
+            <ChevronDown size={20} />
           </button>
 
           {open && (

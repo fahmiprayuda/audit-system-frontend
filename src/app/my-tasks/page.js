@@ -70,7 +70,7 @@ export default function MyTasksPage() {
 
             {/* SUMMARY */}
 
-            <div className="grid grid-cols-5 gap-4 mb-8">
+            <div className="w-full">
                 <TaskQueueTabs
                     summary={data.summary}
                     selectedQueue={selectedQueue}
