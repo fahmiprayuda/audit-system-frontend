@@ -26,6 +26,8 @@ export default function useFindingDetail(id, fdId, apId) {
 
     const [showModal, setShowModal] = useState(false);
 
+    const [showHistory, setShowHistory] = useState(null);
+
     const [newPlan, setNewPlan] = useState({
         finding_department_id: fdId || "",
         root_cause: "",
@@ -222,6 +224,9 @@ export default function useFindingDetail(id, fdId, apId) {
 
         showModal,
         setShowModal,
+
+        showHistory,
+        setShowHistory,
 
         showApprove,
         setShowApprove,

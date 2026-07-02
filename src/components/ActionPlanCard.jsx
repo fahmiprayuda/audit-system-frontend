@@ -6,6 +6,9 @@ import {
   FLAG_COLOR
 } from "@/constants/findingStatus";
 
+import ActionPlanMenu from "@/components/ActionPlanMenu";
+import ExtensionHistoryModal from "@/components/ExtensionHistoryModal";
+
 import { canManageActionPlan } from "@/utils/auth";
 import { useRef, useEffect } from "react";
 import { getUser } from "@/utils/auth";
@@ -30,6 +33,9 @@ export default function ActionPlanCard({
 
   showApprove,
   setShowApprove,
+
+  showHistory,
+  setShowHistory,
 
   showExtend,
   setShowExtend,
@@ -80,29 +86,47 @@ export default function ActionPlanCard({
         }
         className="p-6 cursor-pointer hover:bg-slate-50">
 
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
           <div>
             <p className="font-semibold">Root Cause - {ap.root_cause}</p>
             <p className="text-sm text-slate-500">Corrective Action - {ap.corrective_action}</p>
             <p className="text-xs text-slate-400 mt-2">Due: {formatDate(ap.due_date)}</p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[ap.status]}`}>
-              {STATUS_LABEL[ap.status]}
-            </span>
+          <div className="flex items-start gap-3">
 
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${STATUS_COLOR[ap.status]}`}
+              >
+                {STATUS_LABEL[ap.status]}
+              </span>
+
               {(ap.flags || []).map(flag => (
+
                 <span
                   key={flag}
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${FLAG_COLOR[flag] || "bg-gray-100 text-gray-700"
-                    }`}>
+                  className={`px-2 py-1 rounded-full text-xs ${FLAG_COLOR[flag]}`}
+                >
                   {FLAG_LABEL[flag]}
                 </span>
+
               ))}
+
             </div>
+
+            <ActionPlanMenu
+              onHistory={() =>
+                setShowHistory(ap.id)
+              }
+            />
+
+            <ExtensionHistoryModal
+              open={showHistory === ap.id}
+              onClose={() => setShowHistory(null)}
+              extensions={ap.extensions}
+            />
 
           </div>
         </div>

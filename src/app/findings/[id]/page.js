@@ -51,6 +51,9 @@ export default function FindingDetailPage() {
     showModal,
     setShowModal,
 
+    showHistory,
+    setShowHistory,
+
     newPlan,
     setNewPlan,
 
@@ -223,6 +226,8 @@ export default function FindingDetailPage() {
                     setShowApprove={setShowApprove}
                     showExtend={showExtend}
                     setShowExtend={setShowExtend}
+                    showHistory={showHistory}
+                    setShowHistory={setShowHistory}
                     workflowAction={workflowAction}
                     setWorkflowAction={setWorkflowAction}
                     extensionData={extensionData}
