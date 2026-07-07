@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import api from "@/lib/axios";
 import { getUser } from "@/utils/auth";
 
+import { COLOR, LABEL } from "@/components/badges/WorkflowBadge";
+
 import TaskQueueTabs from "@/components/TaskQueueTabs";
 
 export default function MyTasksPage() {
@@ -105,7 +107,11 @@ export default function MyTasksPage() {
                                 <td className="p-4">{task.finding_code}</td>
                                 <td className="p-4">{task.title}</td>
                                 <td className="p-4">{task.root_cause}</td>
-                                <td className="p-4">{task.status}</td>
+                                <td className="p-4"><span
+                                    className={`px-3 py-1 rounded-full text-xs font-semibold ${COLOR[task.queue]}`}
+                                >
+                                    {LABEL[task.queue]}
+                                </span></td>
                                 <td className="p-4">{formatDate(task.due_date)}</td>
                             </tr>
                         ))}
@@ -113,35 +119,5 @@ export default function MyTasksPage() {
                 </table>
             </div>
         </div>
-    );
-}
-
-function Card({ title, value }) {
-    return (
-        <div className="bg-white p-6 rounded-xl shadow">
-            <p className="text-gray-500 text-sm">{title}</p>
-            <h2 className="text-3xl font-bold">{value}</h2>
-        </div>
-    );
-}
-
-function FilterButton({
-    children,
-    active,
-    onClick
-}) {
-    return (
-        <button
-            onClick={onClick}
-            className={`
-                px-4 py-2 rounded-lg border transition
-                ${active
-                    ? "bg-slate-900 text-white border-slate-900"
-                    : "bg-white hover:bg-slate-100"
-                }
-            `}
-        >
-            {children}
-        </button>
     );
 }

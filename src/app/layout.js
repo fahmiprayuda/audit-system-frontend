@@ -1,6 +1,7 @@
 "use client";
 
 import "./globals.css";
+import "react-datepicker/dist/react-datepicker.css";
 import { usePathname } from "next/navigation";
 
 import Topbar from "@/components/layout/Topbar";

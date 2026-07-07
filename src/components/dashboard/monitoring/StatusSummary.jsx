@@ -12,6 +12,11 @@ export default function StatusSummary({
     summary,
 }) {
 
+    const total =
+        summary.open +
+        summary.need_further_review +
+        summary.closed;
+
     return (
         <>
             <div>
@@ -34,36 +39,33 @@ export default function StatusSummary({
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
 
                 <PlanStatusCard
-                    title="Open Plans"
                     value={summary.open}
+                    total={total}
                     badge="OPEN"
                     badgeColor="bg-blue-50 text-blue-600"
                     icon={<Clock3 size={34} />}
                     iconColor="bg-blue-50 text-blue-600"
-                    dotColor="bg-blue-500"
                     description="Awaiting initial auditee response"
                 />
 
                 <PlanStatusCard
-                    title="Further Review"
                     value={summary.need_further_review}
+                    total={total}
                     badge="NEED FURTHER REVIEW"
                     badgeColor="bg-orange-50 text-orange-600"
                     icon={<SearchCheck size={34} />}
                     iconColor="bg-orange-50 text-orange-600"
-                    dotColor="bg-orange-500"
                     description="Currently in auditor verification"
                 />
 
                 <PlanStatusCard
-                    title="Closed Plans"
                     value={summary.closed}
+                    total={total}
                     badge="CLOSED"
                     badgeColor="bg-green-50 text-green-600"
                     icon={<CheckCircle2 size={34} />}
                     iconColor="bg-green-50 text-green-600"
-                    dotColor="bg-green-500"
-                    description="No completed cycles in this period"
+                    description="Successfully completed"
                 />
 
             </div>

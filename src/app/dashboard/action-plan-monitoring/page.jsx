@@ -12,13 +12,21 @@ import Analytics from "@/components/dashboard/monitoring/Analytics";
 
 export default function ActionPlanMonitoring() {
 
-    const { data, loading } =
-        useActionPlanMonitoring();
+    const {
+        data,
+        loading,
+        fetchData,
+    } = useActionPlanMonitoring();
 
     const [tab, setTab] =
         useState("overview");
 
-    if (loading)
+    const [period, setPeriod] = useState([
+        null,
+        null,
+    ]);
+
+    if (!data)
         return <p>Loading...</p>;
 
     return (
@@ -37,6 +45,9 @@ export default function ActionPlanMonitoring() {
                     ? (
                         <Overview
                             data={data}
+                            period={period}
+                            setPeriod={setPeriod}
+                            fetchData={fetchData}
                         />
                     )
 
