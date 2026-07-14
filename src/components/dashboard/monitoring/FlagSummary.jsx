@@ -1,10 +1,16 @@
 "use client"
 import { AlertTriangle, CheckCircle2, MapPin } from "lucide-react"
 import FlagCard from "@/components/dashboard/monitoring/FlagCard"
+import FlagDetailModal from "@/components/dashboard/monitoring/FlagDetailModal"
+import { useState } from "react"
 
 export default function FlagSummary({
     summary,
 }) {
+
+    const [open, setOpen] = useState(false);
+    const [selectedFlag, setSelectedFlag] = useState(null);
+
     return (
         <><div className="mb-8 mt-10">
             <h1 className="text-3xl font-bold">
@@ -29,6 +35,10 @@ export default function FlagSummary({
                     bgColor="bg-red-100"
                     footerColor="text-blue-600"
                     icon={<AlertTriangle size={15} />}
+                    onClick={() => {
+                        setSelectedFlag("overdue");
+                        setOpen(true);
+                    }}
                 />
 
                 <FlagCard
@@ -36,11 +46,15 @@ export default function FlagSummary({
                     value={summary.submitted}
                     subtitle="Submitted"
                     description="Successfully submitted for auditor evaluation."
-                    footer="Review Now"
+                    footer="View Details"
                     color="text-emerald-500"
                     bgColor="bg-emerald-100"
                     footerColor="text-emerald-600"
                     icon={<CheckCircle2 size={15} />}
+                    onClick={() => {
+                        setSelectedFlag("submitted");
+                        setOpen(true);
+                    }}
                 />
 
                 <FlagCard
@@ -48,11 +62,15 @@ export default function FlagSummary({
                     value={summary.revision_required}
                     subtitle="Revision Required"
                     description="Auditee needs to make corrections to the action plan."
-                    footer="Manage"
+                    footer="View Details"
                     color="text-red-500"
                     bgColor="bg-red-100"
                     footerColor="text-slate-500"
                     icon={<AlertTriangle size={15} />}
+                    onClick={() => {
+                        setSelectedFlag("revision_required");
+                        setOpen(true);
+                    }}
                 />
 
                 <FlagCard
@@ -60,12 +78,18 @@ export default function FlagSummary({
                     value={summary.on_site_validation}
                     subtitle="Site Validation"
                     description="Requires physical verification at the facility."
-                    footer="Schedule"
+                    footer="View Details"
                     color="text-orange-500"
                     bgColor="bg-orange-100"
                     footerColor="text-slate-500"
                     icon={<MapPin size={15} />}
+                    onClick={() => {
+                        setSelectedFlag("on_site_validation");
+                        setOpen(true);
+                    }}
                 />
+
+                <FlagDetailModal open={open} flag={selectedFlag} onClose={() => setOpen(false)} />
 
             </div>
 

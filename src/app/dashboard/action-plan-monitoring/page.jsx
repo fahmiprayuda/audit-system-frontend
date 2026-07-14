@@ -1,64 +1,12 @@
-"use client";
+import ActionPlanMonitoring from "@/app/dashboard/action-plan-monitoring/ActionPlanMonitoring";
 
-import { useState } from "react";
+export const metadata = {
+    title: "Action Plan Dashboard",
+    description: "Action Plan Monitoring Page for the Audit System Application - Internal Audit Department",
+};
 
-import useActionPlanMonitoring from "@/hooks/useActionPlanMonitoring";
-
-import MonitoringHeader from "@/components/dashboard/monitoring/MonitoringHeader";
-import MonitoringTabs from "@/components/dashboard/monitoring/MonitoringTabs";
-
-import Overview from "@/components/dashboard/monitoring/Overview";
-import Analytics from "@/components/dashboard/monitoring/Analytics";
-
-export default function ActionPlanMonitoring() {
-
-    const {
-        data,
-        loading,
-        fetchData,
-    } = useActionPlanMonitoring();
-
-    const [tab, setTab] =
-        useState("overview");
-
-    const [period, setPeriod] = useState([
-        null,
-        null,
-    ]);
-
-    if (!data)
-        return <p>Loading...</p>;
-
+export default function Page() {
     return (
-        <>
-
-            {/* <MonitoringHeader /> */}
-
-            <MonitoringTabs
-                tab={tab}
-                setTab={setTab}
-            />
-
-            {
-                tab === "overview"
-
-                    ? (
-                        <Overview
-                            data={data}
-                            period={period}
-                            setPeriod={setPeriod}
-                            fetchData={fetchData}
-                        />
-                    )
-
-                    : (
-                        <Analytics
-                            data={data}
-                        />
-                    )
-
-            }
-
-        </>
+        <ActionPlanMonitoring />
     );
 }

@@ -46,7 +46,7 @@ export default function PlanStatusCard({
                         <div>
 
                             <span
-                                className={`inline-flex mt-3 px-3 py-1 rounded-full text-2xl font-bold tracking-wide ${badgeColor}`}
+                                className={`inline-flex mt-3 px-3 py-1 rounded-full text-xl font-bold tracking-wide ${badgeColor}`}
                             >
                                 {badge}
                             </span>
@@ -57,7 +57,7 @@ export default function PlanStatusCard({
 
                     <div className="text-right">
 
-                        <p className="text-6xl font-bold tracking-tight text-slate-900">
+                        <p className="text-3xl font-bold tracking-tight text-slate-900">
                             {value}
                         </p>
 

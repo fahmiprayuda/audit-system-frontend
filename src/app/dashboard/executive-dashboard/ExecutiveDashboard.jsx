@@ -15,7 +15,7 @@ import {
     Tooltip,
 } from "recharts";
 
-export default function DashboardPage() {
+export default function ExecutiveDashboard() {
 
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState(null);

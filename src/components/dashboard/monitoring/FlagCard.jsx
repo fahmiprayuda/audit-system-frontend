@@ -14,6 +14,7 @@ export default function FlagCard({
     footer,
     footerColor = "text-blue-600",
 
+    onClick,
 }) {
 
     return (
@@ -61,7 +62,7 @@ export default function FlagCard({
 
             {/* Footer */}
             <div className="border-t px-6 py-4 bg-slate-50">
-                <button className={`text-sm font-semibold hover:opacity-80 transition ${footerColor}`}>
+                <button onClick={onClick} className={`text-sm font-semibold hover:opacity-80 transition ${footerColor}`}>
                     {footer} →
                 </button>
             </div>
