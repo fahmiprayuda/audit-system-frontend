@@ -10,8 +10,12 @@ import {
   LayoutDashboard,
   FolderKanban,
   ClipboardList,
-  Building2,
+  Axe,
   BarChart3,
+  CircleGauge,
+  UserLock,
+  Building2,
+  FolderClock,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -31,7 +35,7 @@ export default function Sidebar() {
     {
       name: "Action Plan Monitoring",
       path: "/dashboard/action-plan-monitoring",
-      icon: LayoutDashboard,
+      icon: CircleGauge,
       roles: ["manager", "auditor"],
     },
     {
@@ -67,13 +71,19 @@ export default function Sidebar() {
     {
       name: "User Management",
       path: "/users",
-      icon: BarChart3,
+      icon: UserLock,
+      roles: ["manager"],
+    },
+    {
+      name: "Company Management",
+      path: "/companies",
+      icon: Building2,
       roles: ["manager"],
     },
     {
       name: "Audit Trails",
       path: "/audit-trails",
-      icon: FolderKanban,
+      icon: FolderClock,
       roles: ["manager"],
     },
   ];
@@ -166,11 +176,11 @@ export default function Sidebar() {
       <div className="absolute bottom-4 left-0 w-full px-4">
         <div className="bg-white/40 backdrop-blur-md rounded-2xl p-4 opacity-0 group-hover:opacity-100 transition-all duration-300 border border-white/30">
           <p className="text-sm font-semibold text-slate-900">
-            Nur Aulia Rahmawati
+            {user?.name}
           </p>
 
           <p className="text-xs text-slate-600">
-            Internal Auditor
+            {user?.role.charAt(0).toUpperCase() + user?.role.slice(1)}
           </p>
         </div>
       </div>

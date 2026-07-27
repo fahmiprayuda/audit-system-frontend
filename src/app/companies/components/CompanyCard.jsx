@@ -10,6 +10,7 @@ import {
 import { formatDate } from "@/utils/date";
 
 export default function CompanyCard({
+    onManage,
     company,
     onEdit,
     onDelete,
@@ -70,6 +71,13 @@ export default function CompanyCard({
             </div>
 
             <div className="flex gap-3 mt-8">
+
+                <button
+                    onClick={() => onManage(company)}
+                    className="flex-1 rounded-xl bg-slate-900 text-white py-2.5 hover:bg-slate-800 transition"
+                >
+                    Departments
+                </button>
 
                 <button
                     onClick={() => onEdit(company)}

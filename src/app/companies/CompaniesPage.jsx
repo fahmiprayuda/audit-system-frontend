@@ -1,12 +1,15 @@
 "use client";
 
+import api from "@/lib/axios";
+
 import { Building2, Plus } from "lucide-react";
 
 import { useState } from "react";
 
 import useCompanies from "@/app/companies/hooks/useCompanies";
 
-import CompanyTable from "@/app/companies/components/CompanyTable";
+import DepartmentFormModal from "@/app/companies/components/DepartmentFormModal";
+import DepartmentModal from "@/app/companies/components/DepartmentModal";
 import CompanyCard from "@/app/companies/components/CompanyCard";
 import CompanyModal from "@/app/companies/components/CompanyModal";
 
@@ -16,6 +19,9 @@ export default function CompaniesPage() {
         useState(false);
 
     const [showDelete, setShowDelete] =
+        useState(false);
+
+    const [showDepartments, setShowDepartments] =
         useState(false);
 
     const {
@@ -28,6 +34,37 @@ export default function CompaniesPage() {
 
     const [selectedCompany, setSelectedCompany] =
         useState(null);
+
+    const deleteCompany = async (company) => {
+
+        if (
+            !confirm(
+                `Delete "${company.name}"?`
+            )
+        ) {
+            return;
+        }
+
+        try {
+
+            await api.delete(
+                `/master/companies/${company.id}`
+            );
+
+            fetchCompanies();
+
+        } catch (err) {
+
+            console.error(err);
+
+            alert(
+                err.response?.data?.message ??
+                "Failed to delete company."
+            );
+
+        }
+
+    };
 
     return (
 
@@ -104,18 +141,15 @@ export default function CompaniesPage() {
                     <CompanyCard
                         key={company.id}
                         company={company}
+                        onManage={(company) => {
+                            setSelectedCompany(company);
+                            setShowDepartments(true);
+                        }}
                         onEdit={(company) => {
-
                             setSelectedCompany(company);
                             setShowModal(true);
-
                         }}
-                        onDelete={(company) => {
-
-                            setSelectedCompany(company);
-                            setShowDelete(true);
-
-                        }}
+                        onDelete={deleteCompany}
                     />
 
                 ))}
@@ -132,6 +166,19 @@ export default function CompaniesPage() {
                 }}
                 company={selectedCompany}
                 onSuccess={fetchCompanies}
+            />
+
+            <DepartmentModal
+
+                open={showDepartments}
+
+                company={selectedCompany}
+
+                onClose={() => {
+                    setShowDepartments(false);
+                    setSelectedCompany(null);
+                }}
+
             />
 
         </div>

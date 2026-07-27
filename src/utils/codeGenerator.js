@@ -12,7 +12,7 @@ const IGNORED_WORDS = [
     "COMPANY",
 ];
 
-export function generateCompanyCode(name = "") {
+export function generateCode(name = "") {
 
     const words = name
         .toUpperCase()

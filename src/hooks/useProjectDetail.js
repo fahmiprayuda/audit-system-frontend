@@ -14,19 +14,17 @@ export default function useProjectDetail(id) {
     // ================= FETCH =================
 
     const fetchData = useCallback(async () => {
-
         try {
 
             setLoading(true);
 
-            const [res, dept] = await Promise.all([
-                api.get(`/projects/${id}`),
-                api.get("/departments")
-            ]);
+            const res = await api.get(`/projects/${id}`);
 
-            setData(res?.data || null);
+            setData(res.data);
 
-            setDepartments(dept?.data || []);
+            setDepartments(
+                res.data.project.company.departments ?? []
+            );
 
         } catch (err) {
 
@@ -37,10 +35,10 @@ export default function useProjectDetail(id) {
         } finally {
 
             setLoading(false);
+
         }
 
     }, [id]);
-
     // ================= INITIAL FETCH =================
 
     useEffect(() => {
