@@ -1,15 +1,13 @@
 "use client";
 
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import useCreateFinding from "@/app/projects/[id]/findings/create/hooks/useCreateFinding";
+import useCreateFinding from "@/app/findings/hooks/useCreateFinding";
 
-import FindingHeader from "@/app/projects/[id]/findings/create/components/FindingHeader";
-import FindingInfoCard from "@/app/projects/[id]/findings/create/components/FindingInfoCard";
-import DepartmentSelector from "@/app/projects/[id]/findings/create/components/DepartmentSelector";
-import ActionPlanCard from "@/app/projects/[id]/findings/create/components/ActionPlanCard";
-import SubmitBar from "@/app/projects/[id]/findings/create/components/SubmitBar";
-import FindingForm from "@/app/projects/[id]/findings/create/components/FindingForm";
+import FindingHeader from "@/app/findings/components/FindingHeader";
+import FindingInfoCard from "@/app/findings/components/FindingInfoCard";
+import DepartmentSelector from "@/app/findings/components/DepartmentSelector";
+import ActionPlanCard from "@/app/findings/components/ActionPlanCard";
+import SubmitBar from "@/app/findings/components/SubmitBar";
+import FindingForm from "@/app/findings/components/FindingForm";
 
 export default function CreateFindingPage() {
 
@@ -34,7 +32,9 @@ export default function CreateFindingPage() {
     return (
         <div className="p-10 bg-gray-100 min-h-screen max-w-5xl mx-auto">
 
-            <FindingHeader project={project} />
+            <FindingHeader
+                title="Create Finding"
+                project={project} />
 
             <FindingForm
                 onSubmit={submitFinding}>
@@ -55,8 +55,10 @@ export default function CreateFindingPage() {
                 />
 
                 <SubmitBar
+                    title="Ready to create finding"
+                    summary={`${selectedDepartments.length} department selected • ${selectedDepartments.length} Action Plan will be created`}
+                    buttonText="Create Finding"
                     loading={loading}
-                    selectedDepartments={selectedDepartments}
                 />
             </FindingForm>
 

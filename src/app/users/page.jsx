@@ -17,6 +17,19 @@ export default function UsersPage() {
         setNewPassword] =
         useState("");
 
+    const [companies, setCompanies] = useState([]);
+
+    const loadCompanies = async () => {
+
+        const res = await api.get(
+            "/master/companies"
+        );
+
+        setCompanies(res.data);
+
+    };
+
+
     const openResetPassword = (
         user
     ) => {
@@ -63,6 +76,7 @@ export default function UsersPage() {
 
     };
 
+
     const [showCreate, setShowCreate] =
         useState(false);
 
@@ -72,41 +86,44 @@ export default function UsersPage() {
             email: "",
             password: "",
             role: "auditee",
+            company_id: "",
             department_id: ""
         });
 
     const [departments, setDepartments] =
         useState([]);
 
-    const loadDepartments =
-        async () => {
+    const loadDepartments = async (companyId) => {
 
-            const res =
-                await api.get(
-                    "/departments"
-                );
+        if (!companyId) {
 
-            setDepartments(
-                res.data
-            );
+            setDepartments([]);
 
-        };
+            return;
 
-    useEffect(() => {
-        loadUsers();
-        loadDepartments();
-    }, []);
+        }
+
+        const res = await api.get(
+            `/master/companies/${companyId}/departments`
+        );
+
+        setDepartments(res.data);
+
+    };
 
     const createUser =
         async () => {
 
             const payload = {
-                ...form
+                name: form.name,
+                email: form.email,
+                password: form.password,
+                role: form.role,
+                department_id:
+                    form.role === "auditee"
+                        ? form.department_id
+                        : null,
             };
-
-            if (payload.role !== "auditee") {
-                payload.department_id = null;
-            }
 
             await api.post("/users", payload);
 
@@ -121,6 +138,7 @@ export default function UsersPage() {
                 email: "",
                 password: "",
                 role: "auditee",
+                company_id: "",
                 department_id: ""
             });
 
@@ -138,9 +156,12 @@ export default function UsersPage() {
             email: user.email,
             password: "",
             role: user.role,
+            company_id: user.company_id || "",
             department_id:
                 user.department_id || ""
         });
+
+        loadDepartments(user.company?.id);
 
         setShowCreate(true);
     };
@@ -210,9 +231,15 @@ export default function UsersPage() {
             email: "",
             password: "",
             role: "auditee",
+            company_id: "",
             department_id: ""
         });
     };
+
+    useEffect(() => {
+        loadUsers();
+        loadCompanies();
+    }, []);
 
 
     return (
@@ -242,6 +269,7 @@ export default function UsersPage() {
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Name</th>
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Email</th>
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Role</th>
+                            <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Company</th>
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Department</th>
                             <th className="px-6 py-4 text-left text-xs uppercase tracking-wider text-slate-500">Actions</th>
                         </tr>
@@ -254,9 +282,18 @@ export default function UsersPage() {
                                 <td className="px-6 py-4 border-t border-slate-100">{user.email}</td>
                                 <td className="px-6 py-4 border-t border-slate-100">{user.role}</td>
                                 <td className="px-6 py-4 border-t border-slate-100">
-                                    <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-md">
-                                        {user.department?.name}
-                                    </span>
+                                    {user.company ? (
+                                        <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-md">
+                                            {user.company?.name}
+                                        </span>
+                                    ) : ("-")}
+                                </td>
+                                <td className="px-6 py-4 border-t border-slate-100">
+                                    {user.department ? (
+                                        <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-md">
+                                            {user.department?.name}
+                                        </span>
+                                    ) : ("-")}
                                 </td>
                                 <td className="p-4 flex gap-3">
                                     <button onClick={() => editUser(user)}>✏️</button>
@@ -329,10 +366,14 @@ export default function UsersPage() {
                                 setForm({
                                     ...form,
                                     role,
+                                    company_id:
+                                        role === "auditee"
+                                            ? form.company_id
+                                            : "",
                                     department_id:
                                         role === "auditee"
                                             ? form.department_id
-                                            : ""
+                                            : "",
                                 });
 
                             }}
@@ -343,22 +384,49 @@ export default function UsersPage() {
                         </select>
 
                         {form.role === "auditee" && (
-                            <select className="w-full mb-10 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                value={form.department_id}
-                                onChange={(e) =>
-                                    setForm({
-                                        ...form,
-                                        department_id: e.target.value
-                                    })
-                                }
-                            >
-                                <option value="">Select Department</option>
-                                {departments.map(d => (
-                                    <option key={d.id} value={d.id}>
-                                        {d.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <>
+                                <label className="text-md font-medium mb-2 block">Company</label>
+                                <select className="w-full mb-10 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={form.company_id}
+                                    onChange={(e) => {
+                                        const company_id = e.target.value;
+                                        setForm(prev => ({
+                                            ...prev,
+                                            company_id,
+                                            department_id: "",
+                                        }));
+                                        loadDepartments(company_id);
+                                    }}
+                                >
+                                    <option value="">Select Company</option>
+                                    {companies.map(company => (
+                                        <option
+                                            key={company.id}
+                                            value={company.id}
+                                        >
+                                            {company.name}
+                                        </option>
+                                    ))}
+                                </select>
+
+                                <label className="text-md font-medium mb-2 block">Department</label>
+                                <select className="w-full mb-10 border border-slate-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={form.department_id}
+                                    onChange={(e) =>
+                                        setForm({
+                                            ...form,
+                                            department_id: e.target.value
+                                        })
+                                    }
+                                >
+                                    <option value="">Select Department</option>
+                                    {departments.map(d => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </>
                         )}
 
                         <div className="flex justify-end gap-2 mt-4">

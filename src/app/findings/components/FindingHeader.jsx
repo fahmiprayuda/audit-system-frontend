@@ -4,7 +4,7 @@ import { ArrowLeft, Building2, FolderKanban } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { formatDate } from "@/utils/date";
 
-export default function FindingHeader({ project }) {
+export default function FindingHeader({ project, title }) {
 
     const router = useRouter();
 
@@ -26,7 +26,7 @@ export default function FindingHeader({ project }) {
 
             <div className="mt-6">
                 <h1 className="text-3xl font-bold text-slate-900">
-                    Create Finding
+                    {title}
                 </h1>
                 <p className="mt-2 text-slate-500">
                     Create a new audit finding for this project.

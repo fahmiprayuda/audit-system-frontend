@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 
 export default function SubmitBar({
     loading,
-    selectedDepartments,
+    summary,
+    title,
+    buttonText,
 }) {
 
     const router = useRouter();
@@ -34,18 +36,12 @@ export default function SubmitBar({
                         <div>
 
                             <p className="font-semibold text-slate-900">
-
-                                Ready to create finding
-
+                                {title}
                             </p>
 
                             <p className="text-sm text-slate-500">
 
-                                {selectedDepartments.length} department selected
-
-                                {selectedDepartments.length > 0 &&
-                                    ` • ${selectedDepartments.length} Action Plan will be created`
-                                }
+                                {summary}
 
                             </p>
 
@@ -72,19 +68,13 @@ export default function SubmitBar({
                         <button
                             type="submit"
                             disabled={
-                                loading ||
-                                selectedDepartments.length === 0
+                                summary.length === 0
                             }
 
                             className="px-8 py-3 rounded-2xl bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition"
 
                         >
-
-                            {loading
-
-                                ? "Creating..."
-
-                                : "Create Finding"}
+                            {loading ? "Saving..." : buttonText}
 
                         </button>
 
