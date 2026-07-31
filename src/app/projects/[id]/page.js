@@ -131,7 +131,6 @@ export default function ProjectPage() {
       await fetchData();
       alert("Finding deleted 🔥");
     } catch (err) {
-      console.error(err);
       alert(err.response?.data?.message || "Delete failed");
     }
   };
@@ -248,21 +247,8 @@ export default function ProjectPage() {
                         }}
                         className="text-blue-600 text-sm"
                       >
-                        Edit
+                        ✏ Edit
                       </button>
-
-                      {!dept.dummy && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteFinding(finding.id);
-                          }}
-                          className="text-red-500 text-sm"
-                        >
-                          Delete
-                        </button>
-                      )}
-
 
                     </td>
 

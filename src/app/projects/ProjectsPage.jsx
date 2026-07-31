@@ -27,6 +27,8 @@ export default function ProjectsPage() {
     const [loadingCompanies, setLoadingCompanies] = useState(true);
     const [submitting, setSubmitting] = useState(false);
 
+    const [editingProject, setEditingProject] = useState(null);
+
 
     // ================= FETCH =================
     const fetchProjects = async (page = 1) => {
@@ -55,6 +57,68 @@ export default function ProjectsPage() {
         fetchProjects(currentPage);
     }, [currentPage]);
 
+    const openEdit = (project) => {
+        setEditingProject(project);
+
+        setName(project.project_name.replace(/^.+? - /, ""));
+        setCompany(project.company_id);
+        setReleaseDate(project.release_date || "");
+
+        setShowModal(true);
+    };
+
+    const updateProject = async () => {
+
+        if (!company) return alert("Company wajib dipilih");
+        if (!name.trim()) return alert("Project name wajib diisi");
+
+        setSubmitting(true);
+
+        try {
+
+            await api.put(`/projects/${editingProject.id}`, {
+                project_name: name.trim(),
+                audit_type: editingProject.audit_type,
+                release_date: releaseDate || null,
+            });
+
+            await fetchProjects(currentPage);
+
+            alert("Project updated successfully 🚀");
+
+            setShowModal(false);
+            setEditingProject(null);
+
+            setName("");
+            setCompany("");
+            setReleaseDate("");
+
+        } catch (err) {
+
+            alert(
+                err.response?.data?.message ||
+                "Failed to update project"
+            );
+
+        } finally {
+
+            setSubmitting(false);
+
+        }
+
+    };
+
+    const closeModal = () => {
+
+        setShowModal(false);
+
+        setEditingProject(null);
+
+        setName("");
+        setCompany("");
+        setReleaseDate("");
+
+    };
     // ================= DELETE =================
     const deleteProject = async (projectId) => {
         if (!confirm("Delete this project?")) return;
@@ -104,7 +168,7 @@ export default function ProjectsPage() {
 
             alert("Project created successfully 🚀");
 
-            setShowModal(false);   // 👈 TAMBAH INI
+            closeModal();   // 👈 TAMBAH INI
 
             setName("");
             setCompany("");
@@ -177,18 +241,28 @@ export default function ProjectsPage() {
                                 {/* START */}
                                 <td className="p-4">{formatDate(project.release_date)}</td>
                                 {/* ACTION */}
-                                <td className="p-4">
+                                <td className="p-4 flex gap-2">
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             deleteProject(project.id);
                                         }}
                                         className="flex items-center gap-1 px-3 py-1 rounded-md
-             text-red-600 text-sm font-medium
-             hover:bg-red-50 hover:text-red-700
-             transition"
+                                        text-red-600 text-sm font-medium
+                                        hover:bg-red-50 hover:text-red-700
+                                        transition"
                                     >
                                         🗑 Delete
+                                    </button>
+
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openEdit(project);
+                                        }}
+                                        className="text-blue-600 text-sm mr-2"
+                                    >
+                                        ✏ Edit
                                     </button>
                                 </td>
                             </tr>
@@ -227,7 +301,7 @@ export default function ProjectsPage() {
             {showModal && (
                 <div
                     className="fixed inset-0 bg-black/40 flex justify-center items-center z-50"
-                    onClick={() => setShowModal(false)}
+                    onClick={() => closeModal()}
                 >
                     <div
                         className="bg-white p-8 rounded-2xl shadow-xl w-[500px]"
@@ -237,11 +311,11 @@ export default function ProjectsPage() {
                         {/* HEADER */}
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-2xl font-bold">
-                                Create Project
+                                {editingProject ? "Edit Project" : "Create Project"}
                             </h2>
 
                             <button
-                                onClick={() => setShowModal(false)}
+                                onClick={() => closeModal()}
                                 className="text-gray-500 hover:text-black text-xl"
                             >
                                 ✕
@@ -299,18 +373,28 @@ export default function ProjectsPage() {
                         {/* FOOTER */}
                         <div className="flex justify-end gap-2">
                             <button
-                                onClick={() => setShowModal(false)}
+                                onClick={() => closeModal()}
                                 className="px-4 py-2 border rounded"
                             >
                                 Cancel
                             </button>
 
                             <button
-                                onClick={submitProject}
+                                onClick={
+                                    editingProject
+                                        ? updateProject
+                                        : submitProject
+                                }
                                 disabled={submitting}
                                 className="bg-blue-600 text-white px-4 py-2 rounded"
                             >
-                                {submitting ? "Creating..." : "Create"}
+                                {submitting
+                                    ? editingProject
+                                        ? "Updating..."
+                                        : "Creating..."
+                                    : editingProject
+                                        ? "Update"
+                                        : "Create"}
                             </button>
                         </div>
 
