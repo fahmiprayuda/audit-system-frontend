@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation";
 
+import { Suspense } from "react";
+
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
 import AuthGuard from "@/components/auth/AuthGuard";
@@ -18,7 +20,11 @@ export default function ClientLayout({
 
     return (
         <>
-            {!isLogin && <Topbar />}
+            {!isLogin && (
+                <Suspense fallback={null}>
+                    <Topbar />
+                </Suspense>
+            )}
 
             <div>
                 {!isLogin && <Sidebar />}
