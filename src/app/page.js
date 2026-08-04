@@ -19,5 +19,5 @@ export default async function Home() {
     redirect("/my-tasks");
   }
 
-  redirect("/dashboard");
+  redirect("/dashboard/executive-dashboard");
 }
