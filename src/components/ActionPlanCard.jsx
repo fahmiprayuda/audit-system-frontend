@@ -9,6 +9,7 @@ import {
 import ActionPlanMenu from "@/components/ActionPlanMenu";
 import ExtensionHistoryModal from "@/components/ExtensionHistoryModal";
 
+import { STORAGE_URL } from "@/lib/config";
 import { canManageActionPlan } from "@/utils/auth";
 import { useRef, useEffect } from "react";
 import { getUser } from "@/utils/auth";
@@ -171,7 +172,7 @@ export default function ActionPlanCard({
                     {comment.attachments?.map(file => (
                       <a
                         key={file.id}
-                        href={`http://localhost:8000/storage/${file.file_path}`}
+                        href={`${STORAGE_URL}/storage/${file.file_path}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block mt-2 p-2 text-blue-600 text-xs">
