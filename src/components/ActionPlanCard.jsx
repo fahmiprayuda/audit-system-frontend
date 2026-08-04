@@ -172,7 +172,7 @@ export default function ActionPlanCard({
                     {comment.attachments?.map(file => (
                       <a
                         key={file.id}
-                        href={`${STORAGE_URL}/storage/${file.file_path}`}
+                        href={`${STORAGE_URL}/files/${file.file_path}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="block mt-2 p-2 text-blue-600 text-xs">
