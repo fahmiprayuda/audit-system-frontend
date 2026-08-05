@@ -84,7 +84,7 @@ export default function Sidebar() {
       name: "Audit Trails",
       path: "/audit-trails",
       icon: FolderClock,
-      roles: ["manager"],
+      roles: ["manager", "auditor"],
     },
   ];
 
