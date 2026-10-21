@@ -194,14 +194,20 @@ export default function Topbar() {
       );
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    document.cookie =
-      "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    document.cookie =
-      "role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    router.push("/login");
+  const logout = async () => {
+    try {
+      await api.post("/logout");
+    } catch (e) {
+      // Ignore network error on logout
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      document.cookie =
+        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      document.cookie =
+        "role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      router.push("/login");
+    }
   };
 
   const [passwordForm, setPasswordForm] =
