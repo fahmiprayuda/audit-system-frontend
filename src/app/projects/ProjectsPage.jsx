@@ -6,6 +6,9 @@ import { formatDate } from "@/utils/date";
 import api from "@/lib/axios";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/badges/StatusBadge";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
+import { Plus, FolderKanban, Trash2, Pencil, Calendar } from "lucide-react";
 
 
 export default function ProjectsPage() {
@@ -187,89 +190,116 @@ export default function ProjectsPage() {
         }
     };
 
-    // ================= LOADING =================
-    if (loading) {
-        return <p className="p-10">Loading projects...</p>;
-    }
-
     return (
-        <div className="p-10 bg-gray-100 min-h-screen">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold">Audit Projects</h1>
+        <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
+            <div className="max-w-7xl mx-auto space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                            Audit Projects
+                        </h1>
+                        <p className="text-sm text-slate-500 mt-1">
+                            Manage audit engagements, scheduled releases & company scopes
+                        </p>
+                    </div>
 
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded">
-                    + Create Project
-                </button>
-            </div>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold text-xs shadow-sm flex items-center gap-1.5 transition cursor-pointer self-start sm:self-auto"
+                    >
+                        <Plus size={16} />
+                        <span>Create Project</span>
+                    </button>
+                </div>
 
-            {/* IF IS EMPTY */}
-            {projects.length === 0 && (<div className="bg-white p-6 rounded-xl shadow text-gray-500">No projects yet.</div>)}
+                {/* TABLE / SKELETON / EMPTY STATE */}
+                {loading ? (
+                    <TableSkeleton rows={5} cols={6} />
+                ) : projects.length === 0 ? (
+                    <EmptyState
+                        icon={FolderKanban}
+                        title="No audit projects yet"
+                        description="Start by creating an annual, quarterly, or ad-hoc audit project."
+                        actionLabel="+ Create Project"
+                        onAction={() => setShowModal(true)}
+                    />
+                ) : (
+                    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left text-sm">
+                                <thead className="bg-slate-50 border-b border-slate-100 text-xs uppercase tracking-wider text-slate-500">
+                                    <tr>
+                                        <th className="p-4">Project Code</th>
+                                        <th className="p-4">Project Name</th>
+                                        <th className="p-4">Company</th>
+                                        <th className="p-4">Status</th>
+                                        <th className="p-4">Release Date</th>
+                                        <th className="p-4 text-center">Actions</th>
+                                    </tr>
+                                </thead>
 
-            {/* TABLE */}
-            <div className="bg-white rounded-xl shadow overflow-x-auto">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b">
-                        <tr>
-                            <th className="p-4">Code</th>
-                            <th className="p-4">Project</th>
-                            <th className="p-4">Company</th>
-                            <th className="p-4">Status</th>
-                            <th className="p-4">Release Date</th>
-                            <th className="p-4">Action</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {projects.map(project => (
-                            <tr
-                                key={project.id}
-                                onClick={(e) => {
-                                    if (e.target.tagName === "BUTTON") return;
-                                    router.push(`/projects/${project.id}`);
-                                }}
-                                className="border-b hover:bg-gray-50 cursor-pointer">
-                                {/* CODE */}
-                                <td className="p-4 font-medium">{project.project_code || "-"}</td>
-                                {/* NAME */}
-                                <td className="p-4">{project.project_name}</td>
-                                {/* COMPANY */}
-                                <td className="p-4">{project.company?.name || "-"}</td>
-                                {/* STATUS */}
-                                <td className="p-4"><StatusBadge status={project.status} /></td>
-                                {/* START */}
-                                <td className="p-4">{formatDate(project.release_date)}</td>
-                                {/* ACTION */}
-                                <td className="p-4 flex gap-2">
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteProject(project.id);
-                                        }}
-                                        className="flex items-center gap-1 px-3 py-1 rounded-md
-                                        text-red-600 text-sm font-medium
-                                        hover:bg-red-50 hover:text-red-700
-                                        transition"
-                                    >
-                                        🗑 Delete
-                                    </button>
-
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            openEdit(project);
-                                        }}
-                                        className="text-blue-600 text-sm mr-2"
-                                    >
-                                        ✏ Edit
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                                <tbody className="divide-y divide-slate-100">
+                                    {projects.map((project) => (
+                                        <tr
+                                            key={project.id}
+                                            onClick={(e) => {
+                                                if (e.target.tagName === "BUTTON" || e.target.closest("button")) return;
+                                                router.push(`/projects/${project.id}`);
+                                            }}
+                                            className="hover:bg-slate-50/80 cursor-pointer transition-colors"
+                                        >
+                                            {/* CODE */}
+                                            <td className="p-4 font-mono text-xs font-semibold text-blue-600">
+                                                {project.project_code || "-"}
+                                            </td>
+                                            {/* NAME */}
+                                            <td className="p-4 font-semibold text-slate-900">
+                                                {project.project_name}
+                                            </td>
+                                            {/* COMPANY */}
+                                            <td className="p-4 text-slate-600">
+                                                {project.company?.name || "-"}
+                                            </td>
+                                            {/* STATUS */}
+                                            <td className="p-4">
+                                                <StatusBadge status={project.status} />
+                                            </td>
+                                            {/* START */}
+                                            <td className="p-4 text-slate-500 text-xs">
+                                                {formatDate(project.release_date)}
+                                            </td>
+                                            {/* ACTION */}
+                                            <td className="p-4">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            openEdit(project);
+                                                        }}
+                                                        className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                                                        title="Edit Project"
+                                                    >
+                                                        <Pencil size={15} />
+                                                    </button>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            deleteProject(project.id);
+                                                        }}
+                                                        className="p-1.5 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
+                                                        title="Delete Project"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
             {/* PAGINATION */}
             <div className="flex justify-center items-center gap-3 mt-4">
@@ -401,8 +431,7 @@ export default function ProjectsPage() {
                     </div>
                 </div>
             )}
-
+            </div>
         </div>
-
     );
 }

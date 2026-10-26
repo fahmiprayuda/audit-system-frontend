@@ -14,6 +14,19 @@ import {
     YAxis,
     Tooltip,
 } from "recharts";
+import CardSkeleton from "@/components/ui/CardSkeleton";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
+import {
+    ClipboardList,
+    AlertTriangle,
+    Clock,
+    CheckCircle2,
+    Eye,
+    FolderKanban,
+    Building2,
+    ShieldAlert,
+} from "lucide-react";
 
 export default function ExecutiveDashboard() {
 
@@ -86,8 +99,24 @@ export default function ExecutiveDashboard() {
     }
     if (loading) {
         return (
-            <div className="p-6">
-                Loading...
+            <div className="p-6 bg-slate-50 min-h-screen">
+                <div className="max-w-7xl mx-auto space-y-6">
+                    <div>
+                        <div className="h-8 w-64 bg-slate-200 rounded-xl animate-pulse" />
+                        <div className="h-4 w-48 bg-slate-200 rounded-xl animate-pulse mt-2" />
+                    </div>
+                    <CardSkeleton count={4} />
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-1 bg-white rounded-2xl border border-slate-100 p-5 shadow-sm space-y-4">
+                            <div className="h-5 w-44 bg-slate-200 rounded animate-pulse" />
+                            <div className="h-[200px] bg-slate-100 rounded-xl animate-pulse" />
+                        </div>
+                        <div className="xl:col-span-2">
+                            <TableSkeleton rows={4} cols={4} />
+                        </div>
+                    </div>
+                    <TableSkeleton rows={3} cols={6} />
+                </div>
             </div>
         );
     }
@@ -96,26 +125,26 @@ export default function ExecutiveDashboard() {
         {
             title: "Total Findings",
             value: summary?.total_findings || 0,
-            color: "bg-slate-100 text-slate-700",
-            icon: "📋",
+            badge: "bg-blue-50 text-blue-600 border border-blue-200/60",
+            icon: ClipboardList,
         },
         {
             title: "Open Findings",
             value: summary?.open_findings || 0,
-            color: "bg-red-100 text-red-700",
-            icon: "🔥",
+            badge: "bg-red-50 text-red-600 border border-red-200/60",
+            icon: AlertTriangle,
         },
         {
             title: "Due Soon",
             value: summary?.due_soon || 0,
-            color: "bg-amber-100 text-amber-700",
-            icon: "⚠️",
+            badge: "bg-amber-50 text-amber-600 border border-amber-200/60",
+            icon: Clock,
         },
         {
             title: "Closed Findings",
             value: summary?.closed_findings || 0,
-            color: "bg-green-100 text-green-700",
-            icon: "✅",
+            badge: "bg-emerald-50 text-emerald-600 border border-emerald-200/60",
+            icon: CheckCircle2,
         },
     ];
 
@@ -124,37 +153,40 @@ export default function ExecutiveDashboard() {
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-800">
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
                         Executive Dashboard
                     </h1>
-                    <p className="text-slate-500 mt-1">
-                        Internal Audit Monitoring
+                    <p className="text-slate-500 text-sm mt-1">
+                        High-level internal audit metrics, department exposure & resolution velocity
                     </p>
                 </div>
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                    {cards.map((card) => (
-                        <div
-                            key={card.title}
-                            className="bg-white rounded-2xl border shadow-sm p-5"
-                        >
-                            <div className="flex justify-between items-center">
-                                <div>
-                                    <p className="text-sm text-slate-500">
-                                        {card.title}
-                                    </p>
-                                    <h2 className="text-3xl font-bold mt-2">
-                                        {card.value}
-                                    </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                    {cards.map((card) => {
+                        const Icon = card.icon;
+                        return (
+                            <div
+                                key={card.title}
+                                className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-5 hover:shadow-md transition-shadow"
+                            >
+                                <div className="flex justify-between items-center">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                            {card.title}
+                                        </p>
+                                        <h2 className="text-3xl font-bold text-slate-900 mt-2">
+                                            {card.value}
+                                        </h2>
+                                    </div>
+                                    <span
+                                        className={`p-3 rounded-2xl ${card.badge}`}
+                                    >
+                                        <Icon className="w-5 h-5" />
+                                    </span>
                                 </div>
-                                <span
-                                    className={`px-3 py-2 rounded-xl text-lg ${card.color}`}
-                                >
-                                    {card.icon}
-                                </span>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
                 {/* Chart + Top Findings */}
                 {/* Chart */}

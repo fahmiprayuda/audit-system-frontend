@@ -33,7 +33,7 @@ export default function ClientLayout({
                     className={
                         isLogin
                             ? ""
-                            : "ml-20 p-6 min-h-screen"
+                            : "ml-0 md:ml-20 p-4 md:p-6 min-h-screen"
                     }
                 >
                     <AuthGuard />
