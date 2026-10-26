@@ -102,9 +102,9 @@ export default function PeriodFilter({
 
     }, []);
 
-    const applyPreset = (key) => {
+    const applyPreset = (key, targetYear) => {
 
-        const year = selectedYear;
+        const year = targetYear ?? selectedYear;
 
         let start;
         let end;
@@ -194,16 +194,6 @@ export default function PeriodFilter({
 
     };
 
-    useEffect(() => {
-
-        if (!activePreset || activePreset === "custom") {
-            return;
-        }
-
-        applyPreset(activePreset);
-
-    }, [selectedYear]);
-
     return (
 
         <div
@@ -261,9 +251,13 @@ export default function PeriodFilter({
 
                             <select
                                 value={selectedYear}
-                                onChange={(e) =>
-                                    setSelectedYear(Number(e.target.value))
-                                }
+                                onChange={(e) => {
+                                    const newYear = Number(e.target.value);
+                                    setSelectedYear(newYear);
+                                    if (activePreset && activePreset !== "custom") {
+                                        applyPreset(activePreset, newYear);
+                                    }
+                                }}
                                 className="
                 w-full
                 rounded-xl

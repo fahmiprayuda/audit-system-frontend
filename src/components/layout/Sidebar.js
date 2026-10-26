@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore, useMemo } from "react";
 import { getUser } from "@/utils/auth";
 
 import {
@@ -18,12 +18,33 @@ import {
   FolderClock,
 } from "lucide-react";
 
-export default function Sidebar() {
+const subscribe = (callback) => {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+};
 
+const getSnapshot = () => {
+  try {
+    return localStorage.getItem("user");
+  } catch {
+    return null;
+  }
+};
+
+const getServerSnapshot = () => null;
+
+export default function Sidebar() {
   const pathname = usePathname();
 
-  const [user, setUser] = useState(null);
-  const [mounted, setMounted] = useState(false);
+  const userJson = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const user = useMemo(() => {
+    if (!userJson) return null;
+    try {
+      return JSON.parse(userJson);
+    } catch {
+      return null;
+    }
+  }, [userJson]);
 
   const menu = [
     {
@@ -50,18 +71,6 @@ export default function Sidebar() {
       icon: ClipboardList,
       roles: ["manager", "auditor"],
     },
-    // {
-    //   name: "Departments",
-    //   path: "/departments",
-    //   icon: Building2,
-    //   roles: ["manager", "auditor"],
-    // },
-    // {
-    //   name: "Reports",
-    //   path: "/reports",
-    //   icon: BarChart3,
-    //   roles: ["manager", "auditor"],
-    // },
     {
       name: "My Tasks",
       path: "/my-tasks",
@@ -88,19 +97,11 @@ export default function Sidebar() {
     },
   ];
 
-  useEffect(() => {
-
-    setUser(getUser());
-
-    setMounted(true);
-
-  }, []);
-
-  if (!mounted) {
+  if (!user) {
     return null;
   }
 
-  const filteredMenu = menu.filter(item =>
+  const filteredMenu = menu.filter((item) =>
     item.roles.includes(user?.role)
   );
 
