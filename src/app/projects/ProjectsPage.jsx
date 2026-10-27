@@ -25,6 +25,8 @@ export default function ProjectsPage() {
     const [name, setName] = useState("");
     const [company, setCompany] = useState("");
     const [releaseDate, setReleaseDate] = useState("");
+    const [leadAuditor, setLeadAuditor] = useState("");
+    const [auditors, setAuditors] = useState([]);
 
     const [companies, setCompanies] = useState([]);
     const [loadingCompanies, setLoadingCompanies] = useState(true);
@@ -66,6 +68,7 @@ export default function ProjectsPage() {
         setName(project.project_name.replace(/^.+? - /, ""));
         setCompany(project.company_id);
         setReleaseDate(project.release_date || "");
+        setLeadAuditor(project.created_by || "");
 
         setShowModal(true);
     };
@@ -83,6 +86,7 @@ export default function ProjectsPage() {
                 project_name: name.trim(),
                 audit_type: editingProject.audit_type,
                 release_date: releaseDate || null,
+                created_by: leadAuditor ? Number(leadAuditor) : undefined,
             });
 
             await fetchProjects(currentPage);
@@ -95,6 +99,7 @@ export default function ProjectsPage() {
             setName("");
             setCompany("");
             setReleaseDate("");
+            setLeadAuditor("");
 
         } catch (err) {
 
@@ -120,6 +125,7 @@ export default function ProjectsPage() {
         setName("");
         setCompany("");
         setReleaseDate("");
+        setLeadAuditor("");
 
     };
     // ================= DELETE =================
@@ -139,18 +145,24 @@ export default function ProjectsPage() {
                 const res = await api.get("/master/companies");
                 setCompanies(res.data || []);
             } catch (err) {
-                console.log(err);
-
-                console.log(err.response);
-
-                console.log(err.message);
-                alert("Failed to load companies");
+                console.error("Failed to load companies", err);
             } finally {
                 setLoadingCompanies(false);
             }
         };
 
+        const fetchAuditors = async () => {
+            try {
+                const res = await api.get("/users");
+                const staff = (res.data || []).filter(u => ["manager", "auditor"].includes(u.role));
+                setAuditors(staff);
+            } catch (err) {
+                console.error("Failed to load auditors list", err);
+            }
+        };
+
         fetchCompanies();
+        fetchAuditors();
     }, []);
 
     // ================= SUBMIT =================
@@ -165,6 +177,7 @@ export default function ProjectsPage() {
                 company_id: Number(company),
                 project_name: name.trim(),
                 release_date: releaseDate || null,
+                created_by: leadAuditor ? Number(leadAuditor) : undefined,
             });
 
             await fetchProjects(currentPage);
@@ -389,6 +402,34 @@ export default function ProjectsPage() {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+
+                        {/* LEAD AUDITOR / PROJECT OWNER */}
+                        <div className="mb-4">
+                            <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm">
+                                    Lead Auditor / Project Head
+                                </label>
+                                <span className="text-[11px] text-slate-400">
+                                    (Opsional)
+                                </span>
+                            </div>
+
+                            <select
+                                value={leadAuditor}
+                                onChange={(e) => setLeadAuditor(e.target.value)}
+                                className="w-full border px-3 py-2 rounded text-sm bg-white"
+                            >
+                                <option value="">Otomatis (User yang sedang Login)</option>
+                                {auditors.map((u) => (
+                                    <option key={u.id} value={u.id}>
+                                        {u.name} ({u.role === "manager" ? "Audit Head / Manager" : "Senior Auditor"})
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-[11px] text-slate-400 mt-1">
+                                Pilih Lead Auditor penanggung jawab project ini, atau biarkan default (anda sendiri).
+                            </p>
                         </div>
 
                         {/* DATE */}
