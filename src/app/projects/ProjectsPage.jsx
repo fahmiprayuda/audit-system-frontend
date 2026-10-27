@@ -421,11 +421,15 @@ export default function ProjectsPage() {
                                 className="w-full border px-3 py-2 rounded text-sm bg-white"
                             >
                                 <option value="">Otomatis (User yang sedang Login)</option>
-                                {auditors.map((u) => (
-                                    <option key={u.id} value={u.id}>
-                                        {u.name} ({u.role === "manager" ? "Audit Head / Manager" : "Senior Auditor"})
-                                    </option>
-                                ))}
+                                {auditors.map((u) => {
+                                    const cleanName = u.name.replace(/\s*\([^)]*\)/g, "").trim();
+                                    const roleTitle = u.role === "manager" ? "Audit Head" : "Senior Auditor";
+                                    return (
+                                        <option key={u.id} value={u.id}>
+                                            {cleanName} ({roleTitle})
+                                        </option>
+                                    );
+                                })}
                             </select>
                             <p className="text-[11px] text-slate-400 mt-1">
                                 Pilih Lead Auditor penanggung jawab project ini, atau biarkan default (anda sendiri).
