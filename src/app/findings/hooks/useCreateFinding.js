@@ -16,6 +16,7 @@ export default function useCreateFinding() {
     const [form, setForm] = useState({
         title: "",
         description: "",
+        risk: "Moderate",
         risk_rating: "Moderate",
     });
 
@@ -105,7 +106,7 @@ export default function useCreateFinding() {
 
                 title: form.title,
                 description: form.description,
-                risk_rating: form.risk,
+                risk_rating: form.risk_rating || form.risk || "Moderate",
 
                 departments: selectedDepartments.map(Number),
 

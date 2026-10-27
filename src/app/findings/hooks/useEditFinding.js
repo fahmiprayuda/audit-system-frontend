@@ -17,6 +17,7 @@ export default function useEditFinding() {
         title: "",
         description: "",
         risk: "Moderate",
+        risk_rating: "Moderate",
     });
 
     // ===============================
@@ -40,7 +41,8 @@ export default function useEditFinding() {
                 setForm({
                     title: finding.title,
                     description: finding.description ?? "",
-                    risk: finding.risk_rating,
+                    risk: finding.risk_rating || "Moderate",
+                    risk_rating: finding.risk_rating || "Moderate",
                 });
 
             } catch (err) {
@@ -83,7 +85,7 @@ export default function useEditFinding() {
 
                 description: form.description,
 
-                risk_rating: form.risk,
+                risk_rating: form.risk_rating || form.risk || "Moderate",
 
             };
 

@@ -115,11 +115,12 @@ export default function FindingInfoCard({
                             />
 
                             <select
-                                value={form.risk}
+                                value={form.risk_rating || form.risk || "Moderate"}
                                 onChange={(e) =>
                                     setForm(prev => ({
                                         ...prev,
                                         risk: e.target.value,
+                                        risk_rating: e.target.value,
                                     }))
                                 }
                                 className="w-full rounded-2xl border border-slate-300
