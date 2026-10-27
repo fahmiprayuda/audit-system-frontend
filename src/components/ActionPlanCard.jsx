@@ -13,6 +13,7 @@ import { STORAGE_URL } from "@/lib/config";
 import { canManageActionPlan } from "@/utils/auth";
 import { useRef, useEffect } from "react";
 import { getUser } from "@/utils/auth";
+import { User, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export default function ActionPlanCard({
   ap,
@@ -87,11 +88,40 @@ export default function ActionPlanCard({
         }
         className="p-6 cursor-pointer hover:bg-slate-50">
 
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="font-semibold">Root Cause - {ap.root_cause}</p>
-            <p className="text-sm text-slate-500">Corrective Action - {ap.corrective_action}</p>
-            <p className="text-xs text-slate-400 mt-2">Due: {formatDate(ap.due_date)}</p>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1 space-y-1.5">
+            {/* PIC & Submitter info badges */}
+            <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 mb-1.5">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-medium border border-blue-100/60">
+                <User size={12} className="text-blue-500" />
+                <span>PIC: <strong>{ap.pic_name || ap.submitted_by?.name || "Department PIC"}</strong></span>
+              </span>
+
+              {ap.submitted_by && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-100/60">
+                  <CheckCircle2 size={12} className="text-emerald-500" />
+                  <span>Submitted by: <strong>{ap.submitted_by.name}</strong></span>
+                </span>
+              )}
+
+              {ap.closed_by && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100/60">
+                  <ShieldCheck size={12} className="text-indigo-500" />
+                  <span>Closed by: <strong>{ap.closed_by.name}</strong></span>
+                </span>
+              )}
+            </div>
+
+            <p className="font-semibold text-slate-900 text-sm">
+              <span className="text-slate-500 font-normal">Root Cause:</span> {ap.root_cause}
+            </p>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              <span className="text-slate-400 font-normal">Corrective Action:</span> {ap.corrective_action}
+            </p>
+            <p className="text-xs text-slate-400 mt-2 inline-flex items-center gap-1.5">
+              <Calendar size={12} />
+              <span>Due: {formatDate(ap.due_date)}</span>
+            </p>
           </div>
 
           <div className="flex items-start gap-3">

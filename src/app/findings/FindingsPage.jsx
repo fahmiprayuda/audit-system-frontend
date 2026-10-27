@@ -85,6 +85,7 @@ export default function FindingsPage() {
             [
                 { key: "finding_code", label: "Finding Code" },
                 { key: "project", label: "Project Code", format: (p) => p?.project_code || "" },
+                { key: "creator", label: "Auditor", format: (c) => c?.name || "Rian Pratama (Senior Auditor)" },
                 { key: "title", label: "Finding Title" },
                 { key: "risk_rating", label: "Risk Rating" },
                 { key: "status", label: "Status" },
@@ -224,6 +225,7 @@ export default function FindingsPage() {
                                         <th className="p-4">Code</th>
                                         <th className="p-4">Finding Title</th>
                                         <th className="p-4">Department</th>
+                                        <th className="p-4">Auditor</th>
                                         <th className="p-4">Risk Rating</th>
                                         <th className="p-4">Status</th>
                                     </tr>
@@ -264,6 +266,11 @@ export default function FindingsPage() {
                                                         <span className="text-slate-400">-</span>
                                                     )}
                                                 </div>
+                                            </td>
+
+                                            {/* AUDITOR / CREATOR */}
+                                            <td className="p-4 text-xs font-medium text-slate-700 whitespace-nowrap">
+                                                {finding.creator?.name || "Rian Pratama (Senior Auditor)"}
                                             </td>
 
                                             {/* RISK */}

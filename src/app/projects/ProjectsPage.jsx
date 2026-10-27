@@ -232,6 +232,7 @@ export default function ProjectsPage() {
                                         <th className="p-4">Project Code</th>
                                         <th className="p-4">Project Name</th>
                                         <th className="p-4">Company</th>
+                                        <th className="p-4">Lead Auditor</th>
                                         <th className="p-4">Status</th>
                                         <th className="p-4">Release Date</th>
                                         <th className="p-4 text-center">Actions</th>
@@ -259,6 +260,10 @@ export default function ProjectsPage() {
                                             {/* COMPANY */}
                                             <td className="p-4 text-slate-600">
                                                 {project.company?.name || "-"}
+                                            </td>
+                                            {/* LEAD AUDITOR / CREATOR */}
+                                            <td className="p-4 text-xs font-medium text-slate-700">
+                                                {project.creator?.name || "Audrey Kurniawan (Audit Head)"}
                                             </td>
                                             {/* STATUS */}
                                             <td className="p-4">
