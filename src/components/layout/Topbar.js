@@ -50,7 +50,8 @@ export default function Topbar() {
       name: "",
       email: "",
       role: "",
-      department: ""
+      department: "",
+      company: "",
     });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -64,7 +65,9 @@ export default function Topbar() {
       email: res.data.email,
       role: res.data.role,
       department:
-        res.data.department?.name || "-"
+        res.data.department?.name || "-",
+      company:
+        res.data.department?.company?.name || "-"
     });
   };
 
@@ -454,13 +457,22 @@ export default function Topbar() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Assigned Role</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Role</label>
                   <input
                     value={profile.role || "-"}
                     disabled
-                    className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 capitalize cursor-not-allowed"
+                    className="w-full border border-slate-200 px-3 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 capitalize cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Company</label>
+                  <input
+                    value={profile.company || "-"}
+                    disabled
+                    className="w-full border border-slate-200 px-3 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 cursor-not-allowed"
                   />
                 </div>
 
@@ -469,7 +481,7 @@ export default function Topbar() {
                   <input
                     value={profile.department || "-"}
                     disabled
-                    className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 cursor-not-allowed"
+                    className="w-full border border-slate-200 px-3 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 cursor-not-allowed"
                   />
                 </div>
               </div>
