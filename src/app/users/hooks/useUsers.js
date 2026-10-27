@@ -164,21 +164,17 @@ export default function useUsers() {
     };
 
     const deleteUser = async (id) => {
-        if (
-            !confirm(
-                "Delete this user?"
-            )
-        ) return;
+        if (!confirm("Apakah Anda yakin ingin menghapus user ini?")) return;
         try {
-            await api.delete(
-                `/users/${id}`
-            );
-            alert("Deleted Successfully");
+            const res = await api.delete(`/users/${id}`);
+            alert(res.data?.message || "User berhasil dihapus");
             await loadUsers();
         } catch (err) {
+            console.error(err);
             alert(
                 err.response?.data?.message ||
-                "Failed"
+                err.response?.data?.error ||
+                "Gagal menghapus user"
             );
         }
     };
