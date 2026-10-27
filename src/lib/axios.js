@@ -23,9 +23,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const isLoginRequest = error.config?.url?.includes("/login");
+    const isAlreadyOnLoginPage =
+      typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/login");
+
     if (
       error.response?.status === 401 &&
-      typeof window !== "undefined"
+      typeof window !== "undefined" &&
+      !isLoginRequest &&
+      !isAlreadyOnLoginPage
     ) {
       localStorage.clear();
 

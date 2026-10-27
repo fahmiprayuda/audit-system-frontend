@@ -53,22 +53,15 @@ export default function LoginPage() {
     },
   ];
 
-  const handleQuickFill = (acc) => {
-    setEmail(acc.email);
-    setPassword(acc.password);
-    setSelectedRole(acc.roleName);
-    setErrorMessage("");
-  };
-
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const executeLogin = async (targetEmail, targetPassword, roleName = null) => {
     setErrorMessage("");
     setLoading(true);
+    if (roleName) setSelectedRole(roleName);
 
     try {
       const res = await api.post("/login", {
-        email,
-        password,
+        email: targetEmail,
+        password: targetPassword,
       });
 
       const token = res.data.token;
@@ -86,14 +79,31 @@ export default function LoginPage() {
         router.push("/dashboard/executive-dashboard");
       }
     } catch (err) {
-      console.error(err);
-      const msg =
-        err.response?.data?.message ||
-        "Login failed. Please check your email and password.";
+      console.error("Login attempt failed:", err);
+      let msg = "Login failed. Please check your email and password.";
+      if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.code === "ERR_NETWORK" || !err.response) {
+        msg = "Gagal terhubung ke Laravel API. Pastikan server Laravel ('php artisan serve') sedang berjalan di port yang benar.";
+      } else if (err.response?.status === 404) {
+        msg = "Endpoint API /login tidak ditemukan (HTTP 404). Pastikan port tidak tertukar dengan server lain (misal FastAPI/Python).";
+      }
       setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQuickDemo = (acc) => {
+    setEmail(acc.email);
+    setPassword(acc.password);
+    setSelectedRole(acc.roleName);
+    executeLogin(acc.email, acc.password, acc.roleName);
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    await executeLogin(email, password);
   };
 
   return (
@@ -132,8 +142,9 @@ export default function LoginPage() {
                 <button
                   key={acc.roleName}
                   type="button"
-                  onClick={() => handleQuickFill(acc)}
-                  className={`flex flex-col items-center text-center p-2.5 rounded-xl border transition-all text-xs cursor-pointer ${
+                  disabled={loading}
+                  onClick={() => handleQuickDemo(acc)}
+                  className={`flex flex-col items-center text-center p-2.5 rounded-xl border transition-all text-xs cursor-pointer disabled:opacity-60 ${
                     isSelected
                       ? "bg-blue-600/20 border-blue-500 text-white shadow-sm ring-1 ring-blue-500"
                       : "bg-slate-900/60 border-slate-700/60 text-slate-300 hover:border-slate-500 hover:bg-slate-800"
@@ -141,20 +152,28 @@ export default function LoginPage() {
                 >
                   <span className="font-semibold">{acc.roleName}</span>
                   <span className="text-[10px] text-slate-400 mt-0.5">
-                    {acc.tag}
+                    {loading && isSelected ? "Logging in..." : acc.tag}
                   </span>
                 </button>
               );
             })}
           </div>
 
-          {selectedRole && (
+          {selectedRole ? (
             <p className="text-[11px] text-slate-400 mt-2.5 flex items-center gap-1.5 px-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              {loading ? (
+                <Loader2 className="w-3.5 h-3.5 text-blue-400 animate-spin shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              )}
               <span>
-                Prefilled for{" "}
+                {loading ? "Authenticating as " : "Logged in as "}
                 <strong className="text-slate-200">{selectedRole}</strong>
               </span>
+            </p>
+          ) : (
+            <p className="text-[11px] text-slate-400 mt-2.5 px-1">
+              💡 Klik salah satu role untuk langsung auto-login 1-klik
             </p>
           )}
         </div>
