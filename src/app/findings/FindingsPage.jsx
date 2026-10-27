@@ -7,7 +7,8 @@ import StatusBadge from "@/components/badges/StatusBadge";
 import RiskBadge from "@/components/badges/RiskBadge";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
-import { Search, RotateCcw, FileSearch } from "lucide-react";
+import { Search, RotateCcw, FileSearch, Download } from "lucide-react";
+import { exportToCsv } from "@/utils/exportCsv";
 
 export default function FindingsPage() {
 
@@ -77,6 +78,25 @@ export default function FindingsPage() {
         setPage(1);
     };
 
+    const handleExport = () => {
+        exportToCsv(
+            findings,
+            `audit_findings_${new Date().toISOString().slice(0, 10)}`,
+            [
+                { key: "finding_code", label: "Finding Code" },
+                { key: "project", label: "Project Code", format: (p) => p?.project_code || "" },
+                { key: "title", label: "Finding Title" },
+                { key: "risk_rating", label: "Risk Rating" },
+                { key: "status", label: "Status" },
+                {
+                    key: "departments",
+                    label: "Departments",
+                    format: (depts) => (depts || []).map((d) => d.name).join("; ")
+                },
+            ]
+        );
+    };
+
     return (
         <div className="p-6 md:p-8 bg-slate-50 min-h-screen">
             <div className="max-w-7xl mx-auto space-y-6">
@@ -91,11 +111,23 @@ export default function FindingsPage() {
                         </p>
                     </div>
 
-                    {pagination && (
-                        <div className="text-xs font-semibold px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-600 shadow-sm self-start sm:self-auto">
-                            Total Findings: <span className="text-blue-600 font-bold">{pagination.total || 0}</span>
-                        </div>
-                    )}
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                        <button
+                            onClick={handleExport}
+                            disabled={findings.length === 0}
+                            className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl font-semibold text-xs shadow-sm flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Export current findings to CSV"
+                        >
+                            <Download size={14} />
+                            <span>Export CSV</span>
+                        </button>
+
+                        {pagination && (
+                            <div className="text-xs font-semibold px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-slate-600 shadow-sm">
+                                Total: <span className="text-blue-600 font-bold">{pagination.total || 0}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* ================= FILTER ================= */}
