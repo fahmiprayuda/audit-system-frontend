@@ -9,6 +9,7 @@ export default function useUsers() {
         email: "",
         password: "",
         role: "auditee",
+        level: "Staff",
         company_id: "",
         department_id: "",
     };
@@ -74,6 +75,7 @@ export default function useUsers() {
                 email: form.email,
                 password: form.password,
                 role: form.role,
+                level: form.level || null,
                 department_id:
                     form.role === "auditee"
                         ? form.department_id
@@ -96,6 +98,7 @@ export default function useUsers() {
             email: user.email,
             password: "",
             role: user.role,
+            level: user.level || "",
             company_id: user.company?.id || "",
             department_id: user.department?.id || ""
         });
@@ -109,6 +112,7 @@ export default function useUsers() {
                 name: form.name,
                 email: form.email,
                 role: form.role,
+                level: form.level || null,
                 department_id:
                     form.role === "auditee"
                         ? form.department_id

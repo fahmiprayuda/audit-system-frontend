@@ -423,7 +423,7 @@ export default function ProjectsPage() {
                                 <option value="">Otomatis (User yang sedang Login)</option>
                                 {auditors.map((u) => {
                                     const cleanName = u.name.replace(/\s*\([^)]*\)/g, "").trim();
-                                    const roleTitle = u.role === "manager" ? "Audit Head" : "Senior Auditor";
+                                    const roleTitle = u.level || (u.role === "manager" ? "Audit Head" : "Senior Auditor");
                                     return (
                                         <option key={u.id} value={u.id}>
                                             {cleanName} ({roleTitle})
