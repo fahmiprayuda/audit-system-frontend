@@ -21,7 +21,9 @@ import {
   Shield,
   CheckCheck,
   Menu,
+  X,
 } from "lucide-react";
+import { createPortal } from "react-dom";
 
 import {
   usePathname,
@@ -242,7 +244,8 @@ export default function Topbar() {
 
 
   return (
-    <header className="ml-0 md:ml-20 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 transition-all">
+    <>
+      <header className="ml-0 md:ml-20 h-16 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40 transition-all">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -393,16 +396,37 @@ export default function Topbar() {
         )}
       </div>
 
-      {/* My Profile Modal */}
-      {showProfile && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-150">
-          <div className="bg-white p-6 rounded-2xl w-[500px] shadow-2xl border border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">My Profile</h2>
+      </header>
 
-            <div className="space-y-3">
+      {/* My Profile Modal (Rendered via Portal to document.body to avoid stacking context & backdrop-filter issues) */}
+      {mounted && typeof document !== "undefined" && showProfile && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-100 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <User size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">My Profile</h2>
+                  <p className="text-xs text-slate-500">Manage your account information and preferences</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProfile(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Full Name</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Full Name</label>
                 <input
+                  type="text"
                   value={profile.name}
                   onChange={(e) =>
                     setProfile({
@@ -410,13 +434,15 @@ export default function Topbar() {
                       name: e.target.value
                     })
                   }
-                  className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm"
+                  placeholder="Enter full name"
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Work Email</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Work Email</label>
                 <input
+                  type="email"
                   value={profile.email}
                   onChange={(e) =>
                     setProfile({
@@ -424,114 +450,152 @@ export default function Topbar() {
                       email: e.target.value
                     })
                   }
-                  className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm"
+                  placeholder="Enter work email"
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Assigned Role</label>
-                <input
-                  value={profile.role}
-                  disabled
-                  className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm bg-slate-50 text-slate-500 capitalize"
-                />
-              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Assigned Role</label>
+                  <input
+                    value={profile.role || "-"}
+                    disabled
+                    className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 capitalize cursor-not-allowed"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1">Department</label>
-                <input
-                  value={profile.department}
-                  disabled
-                  className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm bg-slate-50 text-slate-500"
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Department</label>
+                  <input
+                    value={profile.department || "-"}
+                    disabled
+                    className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 text-slate-500 cursor-not-allowed"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 mt-6">
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2.5">
               <button
+                type="button"
                 onClick={() => setShowProfile(false)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancel
               </button>
 
               <button
+                type="button"
                 disabled={!isChanged}
                 onClick={saveProfile}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-blue-700 disabled:opacity-50"
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:bg-blue-700 disabled:opacity-50 transition shadow-sm shadow-blue-500/20 cursor-pointer disabled:cursor-not-allowed"
               >
                 Save Changes
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Change Password Modal */}
-      {showPassword && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-150">
-          <div className="bg-white p-6 rounded-2xl w-[500px] shadow-2xl border border-slate-100">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Change Password</h2>
-
-            <div className="space-y-3">
-              <input
-                type="password"
-                placeholder="Current Password"
-                value={passwordForm.current_password}
-                onChange={(e) =>
-                  setPasswordForm({
-                    ...passwordForm,
-                    current_password: e.target.value
-                  })
-                }
-                className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm"
-              />
-
-              <input
-                type="password"
-                placeholder="New Password"
-                value={passwordForm.new_password}
-                onChange={(e) =>
-                  setPasswordForm({
-                    ...passwordForm,
-                    new_password: e.target.value
-                  })
-                }
-                className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm"
-              />
-
-              <input
-                type="password"
-                placeholder="Confirm New Password"
-                value={passwordForm.new_password_confirmation}
-                onChange={(e) =>
-                  setPasswordForm({
-                    ...passwordForm,
-                    new_password_confirmation: e.target.value
-                  })
-                }
-                className="w-full border border-slate-200 px-3 py-2 rounded-xl text-sm"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
+      {/* Change Password Modal (Rendered via Portal to document.body) */}
+      {mounted && typeof document !== "undefined" && showPassword && createPortal(
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[9999] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-100 overflow-hidden my-auto animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                  <KeyRound size={18} />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Change Password</h2>
+                  <p className="text-xs text-slate-500">Ensure your account stays secure with a strong password</p>
+                </div>
+              </div>
               <button
                 onClick={() => setShowPassword(false)}
-                className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Current Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={passwordForm.current_password}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      current_password: e.target.value
+                    })
+                  }
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">New Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={passwordForm.new_password}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      new_password: e.target.value
+                    })
+                  }
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Confirm New Password</label>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={passwordForm.new_password_confirmation}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      new_password_confirmation: e.target.value
+                    })
+                  }
+                  className="w-full border border-slate-200 px-3.5 py-2.5 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowPassword(false)}
+                className="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
               >
                 Cancel
               </button>
 
               <button
+                type="button"
                 onClick={changePassword}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-semibold hover:bg-blue-700"
+                className="bg-blue-600 text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:bg-blue-700 transition shadow-sm shadow-blue-500/20 cursor-pointer"
               >
                 Change Password
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </header>
+    </>
   );
 }
