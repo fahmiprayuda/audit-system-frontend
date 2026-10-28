@@ -882,11 +882,11 @@ export default function AuditTrailPage() {
             {/* POLISHED DETAILS INSPECTION MODAL */}
             {inspectLog && (
                 <div
-                    className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex justify-center items-start pt-24 sm:pt-32 pb-24 px-4 transition-opacity"
+                    className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 transition-opacity"
                     onClick={() => setInspectLog(null)}
                 >
                     <div
-                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[85vh] animate-in fade-in zoom-in-95 duration-150"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
