@@ -90,27 +90,24 @@ export default function ActionPlanCard({
 
         <div className="flex justify-between items-start gap-4">
           <div className="flex-1 space-y-1.5">
-            {/* PIC & Submitter info badges */}
-            <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 mb-1.5">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-medium border border-blue-100/60">
-                <Users size={12} className="text-blue-500" />
-                <span>PIC: <strong>{ap.pic_name || ap.submitted_by?.name || "Tim Departemen"}</strong></span>
-              </span>
+            {/* Submitter & Closed info badges */}
+            {(ap.submitted_by || ap.closed_by || ap.status === "closed") && (
+              <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 mb-1.5">
+                {ap.submitted_by && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-100/60">
+                    <CheckCircle2 size={12} className="text-emerald-500" />
+                    <span>Submitted by: <strong>{ap.submitted_by.name}{ap.submitted_by.level ? ` (${ap.submitted_by.level})` : ""}</strong></span>
+                  </span>
+                )}
 
-              {ap.submitted_by && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-100/60">
-                  <CheckCircle2 size={12} className="text-emerald-500" />
-                  <span>Submitted by: <strong>{ap.submitted_by.name}{ap.submitted_by.level ? ` (${ap.submitted_by.level})` : ""}</strong></span>
-                </span>
-              )}
-
-              {ap.closed_by && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100/60">
-                  <ShieldCheck size={12} className="text-indigo-500" />
-                  <span>Closed by: <strong>{ap.closed_by.name}{ap.closed_by.level ? ` (${ap.closed_by.level})` : ""}</strong></span>
-                </span>
-              )}
-            </div>
+                {(ap.closed_by || ap.status === "closed") && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100/60">
+                    <ShieldCheck size={12} className="text-indigo-500" />
+                    <span>Closed by: <strong>{ap.closed_by?.name || "Auditor"}{ap.closed_by?.level ? ` (${ap.closed_by.level})` : ""}</strong></span>
+                  </span>
+                )}
+              </div>
+            )}
 
             <p className="font-semibold text-slate-900 text-sm">
               <span className="text-slate-500 font-normal">Root Cause:</span> {ap.root_cause}
@@ -268,8 +265,11 @@ export default function ActionPlanCard({
 
             {/* Workflow */}
             {canShowWorkflowCheckbox() && (
-              <div className="space-y-2">
-                <div className="flex items-center">
+              <div className="space-y-2 pt-1 pb-0.5">
+                <label
+                  htmlFor={`workflow-${ap.id}`}
+                  className="inline-flex items-center gap-3 py-2 px-3.5 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 cursor-pointer select-none transition group"
+                >
                   <input
                     id={`workflow-${ap.id}`}
                     type="checkbox"
@@ -284,25 +284,23 @@ export default function ActionPlanCard({
                           : "",
                       }))
                     }
-                    className="w-4 h-4 rounded border-slate-300"
+                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600 transition"
                   />
 
-                  <label htmlFor={`workflow-${ap.id}`}>
-
+                  <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 transition">
                     {canManageActionPlan()
                       ? (
                         isSiteValidation
-                          ? " Validation Failed (Request Revision)"
-                          : " Request Revision"
+                          ? "Validation Failed (Request Revision)"
+                          : "Request Revision"
                       )
-                      : " Submit for Review"}
-
-                  </label>
-                </div>
+                      : "Submit for Review"}
+                  </span>
+                </label>
 
                 {workflowAction[ap.id] && (
-                  <p className="text-xs text-blue-600">
-                    This message will also update the workflow status.
+                  <p className="text-xs text-blue-600 font-medium pl-1">
+                    ℹ️ Pesan ini juga akan memperbarui status workflow temuan.
                   </p>
                 )}
               </div>
