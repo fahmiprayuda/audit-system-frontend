@@ -13,7 +13,7 @@ import { STORAGE_URL } from "@/lib/config";
 import { canManageActionPlan } from "@/utils/auth";
 import { useRef, useEffect } from "react";
 import { getUser } from "@/utils/auth";
-import { User, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
+import { User, Users, Calendar, CheckCircle2, ShieldCheck } from "lucide-react";
 
 export default function ActionPlanCard({
   ap,
@@ -93,21 +93,21 @@ export default function ActionPlanCard({
             {/* PIC & Submitter info badges */}
             <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 mb-1.5">
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 font-medium border border-blue-100/60">
-                <User size={12} className="text-blue-500" />
-                <span>PIC: <strong>{ap.pic_name || ap.submitted_by?.name || "Department PIC"}</strong></span>
+                <Users size={12} className="text-blue-500" />
+                <span>PIC: <strong>{ap.pic_name || ap.submitted_by?.name || "Tim Departemen"}</strong></span>
               </span>
 
               {ap.submitted_by && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 font-medium border border-emerald-100/60">
                   <CheckCircle2 size={12} className="text-emerald-500" />
-                  <span>Submitted by: <strong>{ap.submitted_by.name}</strong></span>
+                  <span>Submitted by: <strong>{ap.submitted_by.name}{ap.submitted_by.level ? ` (${ap.submitted_by.level})` : ""}</strong></span>
                 </span>
               )}
 
               {ap.closed_by && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 font-medium border border-indigo-100/60">
                   <ShieldCheck size={12} className="text-indigo-500" />
-                  <span>Closed by: <strong>{ap.closed_by.name}</strong></span>
+                  <span>Closed by: <strong>{ap.closed_by.name}{ap.closed_by.level ? ` (${ap.closed_by.level})` : ""}</strong></span>
                 </span>
               )}
             </div>

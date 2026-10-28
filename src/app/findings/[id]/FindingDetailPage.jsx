@@ -14,6 +14,7 @@ import useActionPlan from "@/hooks/useActionPlan";
 import { getUser, canManageActionPlan } from "@/utils/auth";
 import {
   User,
+  Users,
   Building2,
   Calendar,
   FolderGit2,
@@ -258,16 +259,39 @@ export default function FindingDetailPage() {
                                         )}
                                     </div>
 
-                                    <div className="flex items-center gap-3 text-xs text-slate-500 mt-2">
+                                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-2">
                                         <span className="inline-flex items-center gap-1.5 text-slate-700 font-medium">
-                                            <User size={13} className="text-blue-500" />
-                                            <span>Department PIC: <strong>{fd.pic_name || (fd.pics?.[0]?.name) || `${fd.name} PIC`}</strong></span>
+                                            <Users size={13} className="text-blue-500" />
+                                            <span>Department PICs ({fd.pics?.length || 0}):</span>
                                         </span>
-                                        <span>•</span>
-                                        {apId && !showAllPlans ? (
-                                            <span>Showing {plans.length} of {allPlans.length} Action Plans</span>
+
+                                        {fd.pics && fd.pics.length > 0 ? (
+                                            <div className="flex flex-wrap items-center gap-1.5">
+                                                {fd.pics.map((p) => (
+                                                    <span
+                                                        key={p.id}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 text-xs font-medium"
+                                                        title={p.email}
+                                                    >
+                                                        <span>{p.name}</span>
+                                                        {p.level && (
+                                                            <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-100/70 text-blue-800 font-normal">
+                                                                {p.level}
+                                                            </span>
+                                                        )}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         ) : (
-                                            <span>{allPlans.length} Action Plans</span>
+                                            <span className="text-slate-400 italic">Belum ada PIC terdaftar</span>
+                                        )}
+
+                                        <span className="text-slate-300">•</span>
+
+                                        {apId && !showAllPlans ? (
+                                            <span className="text-slate-600 font-medium">Showing {plans.length} of {allPlans.length} Action Plans</span>
+                                        ) : (
+                                            <span className="text-slate-600 font-medium">{allPlans.length} Action Plans</span>
                                         )}
                                     </div>
                                 </div>
