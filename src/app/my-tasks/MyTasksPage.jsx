@@ -19,14 +19,10 @@ import {
     X,
     Filter,
     Calendar,
-    AlertTriangle,
     CheckCircle2,
     Clock3,
-    FilePlus2,
-    ShieldCheck,
     Target,
     ArrowUpRight,
-    ListTodo,
     ChevronRight,
     AlertCircle,
     RotateCcw
@@ -128,11 +124,6 @@ export default function MyTasksPage() {
                     </div>
                     <div className="h-10 w-64 bg-slate-200 rounded-xl animate-pulse hidden sm:block" />
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                        <div key={i} className="h-24 bg-slate-100 rounded-2xl animate-pulse" />
-                    ))}
-                </div>
                 <div className="h-12 bg-slate-100 rounded-2xl animate-pulse" />
                 <TableSkeleton rows={4} cols={5} />
             </div>
@@ -140,9 +131,6 @@ export default function MyTasksPage() {
     }
 
     const summary = data.summary || {};
-    const needsActionCount = (summary.new || 0) + (summary.revision || 0);
-    const inReviewCount = (summary.waiting || 0) + (summary.site || 0);
-    const overdueCount = summary.overdue || 0;
 
     return (
         <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
@@ -180,128 +168,6 @@ export default function MyTasksPage() {
                         </span>
                     </div>
                 </div>
-            </div>
-
-            {/* QUICK STATS METRIC CARDS */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Total Tasks */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setSelectedQueue("all");
-                        fetchTasks("all");
-                    }}
-                    className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
-                        selectedQueue === "all"
-                            ? "bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900/10"
-                            : "bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-sm"
-                    }`}
-                >
-                    <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${selectedQueue === "all" ? "text-slate-300" : "text-slate-500"}`}>
-                            Total Assigned
-                        </span>
-                        <div className={`p-2 rounded-xl ${selectedQueue === "all" ? "bg-white/10 text-white" : "bg-slate-100 text-slate-600"}`}>
-                            <ListTodo size={16} />
-                        </div>
-                    </div>
-                    <div className="mt-2 text-2xl font-black">
-                        {summary.all ?? 0}
-                    </div>
-                    <div className={`text-xs mt-1 font-medium ${selectedQueue === "all" ? "text-slate-300" : "text-slate-500"}`}>
-                        All active action plans
-                    </div>
-                </button>
-
-                {/* Needs Action */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        const target = summary.new > 0 ? "new" : "revision";
-                        setSelectedQueue(target);
-                        fetchTasks(target);
-                    }}
-                    className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
-                        selectedQueue === "new" || selectedQueue === "revision"
-                            ? "bg-amber-500 text-white border-amber-500 shadow-md ring-2 ring-amber-500/10"
-                            : "bg-white border-slate-200/80 hover:border-amber-300 hover:shadow-sm"
-                    }`}
-                >
-                    <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${selectedQueue === "new" || selectedQueue === "revision" ? "text-amber-100" : "text-amber-700"}`}>
-                            Action Required
-                        </span>
-                        <div className={`p-2 rounded-xl ${selectedQueue === "new" || selectedQueue === "revision" ? "bg-white/20 text-white" : "bg-amber-100 text-amber-700"}`}>
-                            <FilePlus2 size={16} />
-                        </div>
-                    </div>
-                    <div className="mt-2 text-2xl font-black">
-                        {needsActionCount}
-                    </div>
-                    <div className={`text-xs mt-1 font-medium ${selectedQueue === "new" || selectedQueue === "revision" ? "text-amber-100" : "text-slate-500"}`}>
-                        {summary.new || 0} New • {summary.revision || 0} Revision
-                    </div>
-                </button>
-
-                {/* Under Review */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setSelectedQueue("waiting");
-                        fetchTasks("waiting");
-                    }}
-                    className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
-                        selectedQueue === "waiting" || selectedQueue === "site"
-                            ? "bg-indigo-600 text-white border-indigo-600 shadow-md ring-2 ring-indigo-600/10"
-                            : "bg-white border-slate-200/80 hover:border-indigo-300 hover:shadow-sm"
-                    }`}
-                >
-                    <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${selectedQueue === "waiting" || selectedQueue === "site" ? "text-indigo-200" : "text-indigo-700"}`}>
-                            Audit Review
-                        </span>
-                        <div className={`p-2 rounded-xl ${selectedQueue === "waiting" || selectedQueue === "site" ? "bg-white/20 text-white" : "bg-indigo-100 text-indigo-700"}`}>
-                            <ShieldCheck size={16} />
-                        </div>
-                    </div>
-                    <div className="mt-2 text-2xl font-black">
-                        {inReviewCount}
-                    </div>
-                    <div className={`text-xs mt-1 font-medium ${selectedQueue === "waiting" || selectedQueue === "site" ? "text-indigo-200" : "text-slate-500"}`}>
-                        {summary.waiting || 0} Waiting • {summary.site || 0} Site
-                    </div>
-                </button>
-
-                {/* Overdue */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setSelectedQueue("overdue");
-                        fetchTasks("overdue");
-                    }}
-                    className={`p-4 rounded-2xl border text-left transition cursor-pointer ${
-                        selectedQueue === "overdue"
-                            ? "bg-rose-600 text-white border-rose-600 shadow-md ring-2 ring-rose-600/10"
-                            : overdueCount > 0
-                            ? "bg-rose-50/50 border-rose-200 hover:border-rose-300 hover:shadow-sm"
-                            : "bg-white border-slate-200/80 hover:border-slate-300 hover:shadow-sm"
-                    }`}
-                >
-                    <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold uppercase tracking-wider ${selectedQueue === "overdue" ? "text-rose-100" : overdueCount > 0 ? "text-rose-700 font-extrabold" : "text-slate-500"}`}>
-                            Overdue Actions
-                        </span>
-                        <div className={`p-2 rounded-xl ${selectedQueue === "overdue" ? "bg-white/20 text-white" : overdueCount > 0 ? "bg-rose-100 text-rose-700" : "bg-slate-100 text-slate-500"}`}>
-                            <AlertTriangle size={16} />
-                        </div>
-                    </div>
-                    <div className={`mt-2 text-2xl font-black ${selectedQueue === "overdue" ? "text-white" : overdueCount > 0 ? "text-rose-600" : "text-slate-900"}`}>
-                        {overdueCount}
-                    </div>
-                    <div className={`text-xs mt-1 font-medium ${selectedQueue === "overdue" ? "text-rose-100" : overdueCount > 0 ? "text-rose-600 font-semibold" : "text-slate-500"}`}>
-                        {overdueCount > 0 ? "Requires urgent remediation" : "No overdue items"}
-                    </div>
-                </button>
             </div>
 
             {/* QUEUE TABS */}
