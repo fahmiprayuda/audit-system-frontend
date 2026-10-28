@@ -890,12 +890,12 @@ export default function AuditTrailPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-start justify-between px-6 sm:px-8 pt-7 pb-5 border-b border-slate-100 bg-slate-50/70">
-                            <div className="space-y-1.5">
+                        <div className="flex items-start justify-between px-6 sm:px-8 pt-10 sm:pt-12 pb-6 border-b border-slate-100 bg-slate-50/80">
+                            <div className="space-y-2">
                                 <div className="flex items-center gap-2.5 flex-wrap">
-                                    <span className="font-bold text-slate-900 text-lg">
+                                    <h3 className="font-bold text-slate-900 text-lg leading-snug tracking-tight">
                                         Audit Event #{inspectLog.id}
-                                    </span>
+                                    </h3>
                                     <span
                                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                                             getActionMeta(inspectLog.action).badgeClass
@@ -922,6 +922,7 @@ export default function AuditTrailPage() {
                             <button
                                 onClick={() => setInspectLog(null)}
                                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-xl transition cursor-pointer -mr-1"
+                                title="Close"
                             >
                                 <X className="w-5 h-5" />
                             </button>
