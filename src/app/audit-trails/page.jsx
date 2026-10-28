@@ -882,11 +882,11 @@ export default function AuditTrailPage() {
             {/* POLISHED DETAILS INSPECTION MODAL */}
             {inspectLog && (
                 <div
-                    className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 md:p-8 pt-16 sm:pt-20 pb-16 transition-opacity"
+                    className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex justify-center items-start pt-24 sm:pt-32 pb-24 px-4 transition-opacity"
                     onClick={() => setInspectLog(null)}
                 >
                     <div
-                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[calc(100vh-7rem)] animate-in fade-in zoom-in-95 duration-150"
+                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
@@ -928,57 +928,66 @@ export default function AuditTrailPage() {
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-6 overflow-y-auto space-y-4">
+                        <div className="p-6 overflow-y-auto space-y-4 max-h-[70vh]">
                             {/* Context & Reference Banner */}
                             {(inspectLog.project_code || inspectLog.finding_code) && (
-                                <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        {inspectLog.finding_code && (
-                                            <div className="flex items-center gap-1.5">
-                                                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                                                    Finding:
-                                                </span>
-                                                <span className="font-mono font-bold px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded text-xs">
-                                                    {inspectLog.finding_code}
-                                                </span>
-                                            </div>
-                                        )}
+                                <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-xl space-y-2 text-xs">
+                                    <div className="flex flex-wrap items-center justify-between gap-3">
+                                        <div className="flex flex-wrap items-center gap-2.5">
+                                            {inspectLog.finding_code && (
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                                        Finding:
+                                                    </span>
+                                                    <span className="font-mono font-bold px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded text-xs">
+                                                        {inspectLog.finding_code}
+                                                    </span>
+                                                </div>
+                                            )}
 
-                                        {inspectLog.project_code && (
-                                            <div className="flex items-center gap-1.5 ml-1">
-                                                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                                                    Project:
-                                                </span>
-                                                <span className="font-mono font-bold px-2 py-0.5 bg-sky-50 text-sky-900 border border-sky-200 rounded text-xs">
-                                                    {inspectLog.project_code}
-                                                </span>
-                                            </div>
-                                        )}
+                                            {inspectLog.project_code && (
+                                                <div className="flex items-center gap-1.5 ml-1">
+                                                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                                                        Project:
+                                                    </span>
+                                                    <span className="font-mono font-bold px-2 py-0.5 bg-sky-50 text-sky-900 border border-sky-200 rounded text-xs">
+                                                        {inspectLog.project_code}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Direct links */}
+                                        <div className="flex items-center gap-2">
+                                            {inspectLog.finding_id && (
+                                                <Link
+                                                    href={`/findings/${inspectLog.finding_id}`}
+                                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold text-amber-800 bg-amber-100 hover:bg-amber-200/80 transition"
+                                                    onClick={() => setInspectLog(null)}
+                                                >
+                                                    <span>Open Finding</span>
+                                                    <ExternalLink className="w-3 h-3" />
+                                                </Link>
+                                            )}
+                                            {inspectLog.project_id && (
+                                                <Link
+                                                    href={`/projects/${inspectLog.project_id}`}
+                                                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold text-sky-800 bg-sky-100 hover:bg-sky-200/80 transition"
+                                                    onClick={() => setInspectLog(null)}
+                                                >
+                                                    <span>Open Project</span>
+                                                    <ExternalLink className="w-3 h-3" />
+                                                </Link>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* Direct links */}
-                                    <div className="flex items-center gap-2">
-                                        {inspectLog.finding_id && (
-                                            <Link
-                                                href={`/findings/${inspectLog.finding_id}`}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-800 bg-amber-100/70 hover:bg-amber-100 transition"
-                                                onClick={() => setInspectLog(null)}
-                                            >
-                                                <span>Open Finding</span>
-                                                <ExternalLink className="w-3 h-3" />
-                                            </Link>
-                                        )}
-                                        {inspectLog.project_id && (
-                                            <Link
-                                                href={`/projects/${inspectLog.project_id}`}
-                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-sky-800 bg-sky-100/70 hover:bg-sky-100 transition"
-                                                onClick={() => setInspectLog(null)}
-                                            >
-                                                <span>Open Project</span>
-                                                <ExternalLink className="w-3 h-3" />
-                                            </Link>
-                                        )}
-                                    </div>
+                                    {inspectLog.finding_title && (
+                                        <div className="text-xs text-slate-600 font-medium pt-1 border-t border-slate-200/60 flex items-center gap-1.5">
+                                            <span className="text-slate-400 font-semibold text-[10px] uppercase tracking-wider">Title:</span>
+                                            <span className="text-slate-800 font-semibold">{inspectLog.finding_title}</span>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
