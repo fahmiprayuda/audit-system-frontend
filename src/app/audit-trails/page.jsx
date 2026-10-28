@@ -882,11 +882,11 @@ export default function AuditTrailPage() {
             {/* POLISHED DETAILS INSPECTION MODAL */}
             {inspectLog && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+                    className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 md:p-8 pt-16 sm:pt-20 pb-16 transition-opacity"
                     onClick={() => setInspectLog(null)}
                 >
                     <div
-                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150"
+                        className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col my-auto max-h-[calc(100vh-7rem)] animate-in fade-in zoom-in-95 duration-150"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
@@ -999,12 +999,7 @@ export default function AuditTrailPage() {
                             </div>
 
                             {/* Intelligent Event Details Presentation */}
-                            <CleanEventDetails
-                                action={inspectLog.action}
-                                module={inspectLog.module}
-                                oldValues={inspectLog.old_values}
-                                newValues={inspectLog.new_values}
-                            />
+                            <CleanEventDetails log={inspectLog} />
                         </div>
 
                         {/* Modal Footer */}
@@ -1028,9 +1023,42 @@ export default function AuditTrailPage() {
 }
 
 // Subcomponent: Clean, Intelligent Event Details Inspector
-function CleanEventDetails({ action, module, oldValues, newValues }) {
+function CleanEventDetails({ log }) {
+    const action = log.action;
+    const module = log.module;
+    const oldValues = log.old_values;
+    const newValues = log.new_values;
+
     const act = normalize(action);
+    const mod = normalize(module);
     const isCreate = act === "create" || (!oldValues && Boolean(newValues));
+
+    // CASE 0: COMMENT MODULE -> Render clean Comment Message Card
+    if (mod === "comment" || log.comment_message) {
+        const commentMsg =
+            log.comment_message ||
+            (newValues && typeof newValues === "object"
+                ? newValues.comment || newValues.message
+                : null);
+
+        return (
+            <div className="space-y-2">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Comment Message</span>
+                </h4>
+                {commentMsg ? (
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/90 text-xs text-slate-800 leading-relaxed font-normal whitespace-pre-wrap">
+                        &ldquo;{commentMsg}&rdquo;
+                    </div>
+                ) : (
+                    <div className="p-4 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-xs text-slate-500 italic text-center">
+                        Comment recorded on the action plan thread.
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     // CASE 1: CREATION EVENT -> Show clean Key-Value Attribute Cards (NO empty '-' columns!)
     if (isCreate) {
@@ -1045,7 +1073,7 @@ function CleanEventDetails({ action, module, oldValues, newValues }) {
         if (keys.length === 0) {
             return (
                 <div className="p-4 rounded-xl bg-slate-50 text-slate-500 text-xs text-center border border-dashed border-slate-200">
-                    Record successfully registered with default parameters.
+                    New record created successfully.
                 </div>
             );
         }
