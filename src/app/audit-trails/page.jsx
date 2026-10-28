@@ -890,10 +890,10 @@ export default function AuditTrailPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-start justify-between px-6 py-4.5 border-b border-slate-100 bg-slate-50/70">
-                            <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-bold text-slate-900 text-base">
+                        <div className="flex items-start justify-between px-6 sm:px-8 pt-7 pb-5 border-b border-slate-100 bg-slate-50/70">
+                            <div className="space-y-1.5">
+                                <div className="flex items-center gap-2.5 flex-wrap">
+                                    <span className="font-bold text-slate-900 text-lg">
                                         Audit Event #{inspectLog.id}
                                     </span>
                                     <span
@@ -911,7 +911,7 @@ export default function AuditTrailPage() {
                                         {getModuleMeta(inspectLog.module).label}
                                     </span>
                                 </div>
-                                <p className="text-xs text-slate-500 mt-1">
+                                <p className="text-xs text-slate-500">
                                     Recorded on {formatDateTime(inspectLog.created_at)} by{" "}
                                     <span className="font-semibold text-slate-800">
                                         {inspectLog.user?.name || "System Automated"}
@@ -921,14 +921,14 @@ export default function AuditTrailPage() {
                             </div>
                             <button
                                 onClick={() => setInspectLog(null)}
-                                className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-xl transition cursor-pointer -mr-1"
                             >
                                 <X className="w-5 h-5" />
                             </button>
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-6 overflow-y-auto space-y-4 max-h-[70vh]">
+                        <div className="px-6 sm:px-8 py-6 overflow-y-auto space-y-4 max-h-[70vh]">
                             {/* Context & Reference Banner */}
                             {(inspectLog.project_code || inspectLog.finding_code) && (
                                 <div className="p-4 bg-slate-50 border border-slate-200/90 rounded-xl space-y-2 text-xs">
@@ -1012,7 +1012,7 @@ export default function AuditTrailPage() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center justify-between px-6 sm:px-8 py-4.5 border-t border-slate-100 bg-slate-50/50">
                             <span className="text-[11px] text-slate-400">
                                 Log Reference ID: #{inspectLog.id}
                             </span>
