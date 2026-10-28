@@ -1013,7 +1013,7 @@ export default function AuditTrailPage() {
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex items-center justify-between px-6 sm:px-8 py-4.5 border-t border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center justify-between px-6 sm:px-8 pt-5 pb-7 border-t border-slate-100 bg-slate-50/60">
                             <span className="text-[11px] text-slate-400">
                                 Log Reference ID: #{inspectLog.id}
                             </span>
