@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import api from "@/lib/axios";
-import { formatDateTime, timeAgo, formatDateForApi } from "@/utils/date";
+import { formatDateTime, timeAgo, formatDateForApi, formatDate } from "@/utils/date";
 import { exportToCsv } from "@/utils/exportCsv";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
+import Link from "next/link";
 import {
     History,
     Search,
     X,
-    Filter,
     RotateCcw,
     Download,
     Eye,
     Clock,
-    User as UserIcon,
     FolderKanban,
     AlertCircle,
     ListTodo,
@@ -31,8 +30,9 @@ import {
     ChevronsLeft,
     ChevronsRight,
     ArrowRight,
-    Shield,
+    ExternalLink,
     FileText,
+    ArrowUpRight,
 } from "lucide-react";
 
 // Helper: Normalize string
@@ -125,7 +125,7 @@ function getModuleMeta(module) {
             badgeClass: "bg-amber-50 text-amber-700 border-amber-200/80",
         };
     }
-    if (mod === "action_plan") {
+    if (mod === "action_plan" || mod === "actionplan") {
         return {
             label: "Action Plan",
             icon: ListTodo,
@@ -165,30 +165,100 @@ function getAvatarBg(name = "") {
     return colors[Math.abs(hash) % colors.length];
 }
 
-// Helper to highlight codes like FND-..., PRJ-... in descriptions
-function renderFormattedDescription(text = "") {
-    if (!text) return <span className="text-slate-400 italic">No description provided</span>;
+// Format human-friendly field name
+function formatFieldName(key = "") {
+    const map = {
+        project_code: "Project Code",
+        project_name: "Project Name",
+        finding_code: "Finding Code",
+        risk_rating: "Risk Rating",
+        risk_category: "Risk Category",
+        audit_type: "Audit Type",
+        release_date: "Release Date",
+        due_date: "Due Date",
+        status: "Status",
+        workflow_status: "Workflow Status",
+        workflow_action: "Workflow Action",
+        company_id: "Company ID",
+        created_by: "Created By",
+        closed_by: "Closed By",
+        closed_at: "Closed At",
+        action_plan: "Action Plan Task",
+        corrective_action: "Corrective Action",
+        root_cause: "Root Cause",
+        lead_auditor: "Lead Auditor",
+        comment: "Comment Message",
+        message: "Message",
+    };
+    return map[key] || key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-    // Pattern to highlight codes (e.g., FND-..., PRJ-..., etc.)
-    const parts = text.split(/([A-Z]{2,4}-[A-Z0-9-]+)/g);
-
-    return (
-        <span className="text-slate-700 leading-relaxed">
-            {parts.map((part, index) => {
-                if (/^[A-Z]{2,4}-[A-Z0-9-]+$/.test(part)) {
-                    return (
-                        <span
-                            key={index}
-                            className="inline-block px-1.5 py-0.5 mx-1 font-mono text-xs font-semibold bg-slate-100 text-slate-800 rounded border border-slate-200"
-                        >
-                            {part}
+// Format field value for display in details
+function formatValueDisplay(v, key = "") {
+    if (v === null || v === undefined || v === "") {
+        return <span className="text-slate-300 italic">—</span>;
+    }
+    if (typeof v === "boolean") {
+        return (
+            <span
+                className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    v ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                }`}
+            >
+                {v ? "Yes" : "No"}
+            </span>
+        );
+    }
+    if (typeof v === "object") {
+        if (v && v.name) return String(v.name);
+        if (Array.isArray(v)) {
+            if (v.length === 0) return <span className="text-slate-300 italic">Empty</span>;
+            return (
+                <div className="flex flex-wrap gap-1">
+                    {v.map((item, i) => (
+                        <span key={i} className="px-1.5 py-0.5 bg-slate-100 rounded text-xs">
+                            {typeof item === "object" ? JSON.stringify(item) : String(item)}
                         </span>
-                    );
-                }
-                return <span key={index}>{part}</span>;
-            })}
-        </span>
-    );
+                    ))}
+                </div>
+            );
+        }
+        return <span className="font-mono text-xs">{JSON.stringify(v)}</span>;
+    }
+
+    const str = String(v);
+
+    // If date format YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return <span>{formatDate(str)}</span>;
+    }
+
+    // If status
+    if (key.toLowerCase().includes("status")) {
+        const isClosed = str.toLowerCase() === "closed";
+        return (
+            <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${
+                    isClosed
+                        ? "bg-teal-50 text-teal-700 border border-teal-200"
+                        : "bg-blue-50 text-blue-700 border border-blue-200"
+                }`}
+            >
+                {str.replace(/_/g, " ")}
+            </span>
+        );
+    }
+
+    // If code like AUD-... or FND-...
+    if (/^[A-Z]{2,4}-[A-Z0-9-]+$/.test(str)) {
+        return (
+            <span className="font-mono font-semibold px-2 py-0.5 bg-slate-100 text-slate-800 rounded border border-slate-200 text-xs">
+                {str}
+            </span>
+        );
+    }
+
+    return <span>{str}</span>;
 }
 
 export default function AuditTrailPage() {
@@ -327,11 +397,6 @@ export default function AuditTrailPage() {
                 format: (_, row) => row.user?.role || "-",
             },
             {
-                key: "user_level",
-                label: "ACTOR LEVEL",
-                format: (_, row) => row.user?.level || "-",
-            },
-            {
                 key: "module",
                 label: "MODULE",
                 format: (val) => String(val).toUpperCase(),
@@ -341,7 +406,16 @@ export default function AuditTrailPage() {
                 label: "ACTION",
                 format: (val) => String(val).toUpperCase(),
             },
-            { key: "record_id", label: "RECORD ID" },
+            {
+                key: "project_code",
+                label: "PROJECT CODE",
+                format: (val, row) => row.project_code || "-",
+            },
+            {
+                key: "finding_code",
+                label: "FINDING CODE",
+                format: (val, row) => row.finding_code || "-",
+            },
             { key: "description", label: "DESCRIPTION" },
         ];
 
@@ -363,12 +437,12 @@ export default function AuditTrailPage() {
                                 <h1 className="text-2xl font-bold tracking-tight text-slate-900">
                                     System Audit Trail
                                 </h1>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200/80">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200/80">
                                     {pagination.total} Records
                                 </span>
                             </div>
                             <p className="text-xs text-slate-500 mt-0.5">
-                                Immutable chronological event feed & comprehensive change logs
+                                Immutable event feed with linked Project & Finding context codes
                             </p>
                         </div>
                     </div>
@@ -403,7 +477,7 @@ export default function AuditTrailPage() {
                             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search by description, actor, module, or action..."
+                                placeholder="Search by Project (AUD-...), Finding (FND-...), Actor, or Action..."
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 className="w-full pl-9.5 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
@@ -536,16 +610,15 @@ export default function AuditTrailPage() {
                                     <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
                                         <th className="py-3.5 px-4">Timestamp</th>
                                         <th className="py-3.5 px-4">Actor</th>
-                                        <th className="py-3.5 px-4">Module</th>
-                                        <th className="py-3.5 px-4">Action</th>
-                                        <th className="py-3.5 px-4 min-w-[320px]">Description & Changes</th>
+                                        <th className="py-3.5 px-4">Event</th>
+                                        <th className="py-3.5 px-4">Linked Context</th>
+                                        <th className="py-3.5 px-4 min-w-[280px]">Activity Description</th>
                                         <th className="py-3.5 px-4 text-right">Details</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
                                     {logs.map((log) => {
                                         const actionMeta = getActionMeta(log.action);
-                                        const ActionIcon = actionMeta.icon;
                                         const moduleMeta = getModuleMeta(log.module);
                                         const ModuleIcon = moduleMeta.icon;
                                         const hasDiff = Boolean(
@@ -584,7 +657,7 @@ export default function AuditTrailPage() {
                                                 <td className="py-4 px-4 align-top whitespace-nowrap">
                                                     <div className="flex items-center gap-2.5">
                                                         <div
-                                                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold shadow-2xs ${getAvatarBg(
+                                                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-[11px] font-bold shadow-2xs shrink-0 ${getAvatarBg(
                                                                 actorName
                                                             )}`}
                                                         >
@@ -616,55 +689,102 @@ export default function AuditTrailPage() {
                                                     </div>
                                                 </td>
 
-                                                {/* MODULE */}
+                                                {/* EVENT (MODULE & ACTION) */}
                                                 <td className="py-4 px-4 align-top whitespace-nowrap">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border ${moduleMeta.badgeClass}`}
-                                                    >
-                                                        <ModuleIcon className="w-3.5 h-3.5" />
-                                                        <span>{moduleMeta.label}</span>
-                                                    </span>
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${moduleMeta.badgeClass}`}
+                                                        >
+                                                            <ModuleIcon className="w-3 h-3" />
+                                                            <span>{moduleMeta.label}</span>
+                                                        </span>
+                                                        <span
+                                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${actionMeta.badgeClass}`}
+                                                        >
+                                                            <span
+                                                                className={`w-1.5 h-1.5 rounded-full ${actionMeta.dotClass}`}
+                                                            />
+                                                            <span>{actionMeta.label}</span>
+                                                        </span>
+                                                    </div>
                                                 </td>
 
-                                                {/* ACTION */}
+                                                {/* LINKED CONTEXT (PROJECT & FINDING CODES) */}
                                                 <td className="py-4 px-4 align-top whitespace-nowrap">
-                                                    <span
-                                                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ring-1 ${actionMeta.badgeClass}`}
-                                                    >
-                                                        <span
-                                                            className={`w-1.5 h-1.5 rounded-full ${actionMeta.dotClass}`}
-                                                        />
-                                                        <span>{actionMeta.label}</span>
-                                                    </span>
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        {log.finding_code && (
+                                                            <div className="flex items-center gap-1.5">
+                                                                {log.finding_id ? (
+                                                                    <Link
+                                                                        href={`/findings/${log.finding_id}`}
+                                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/90 hover:bg-amber-100 hover:border-amber-300 transition group/link"
+                                                                        title="Go to Finding details"
+                                                                    >
+                                                                        <AlertCircle className="w-3 h-3 text-amber-600" />
+                                                                        <span>{log.finding_code}</span>
+                                                                        <ArrowUpRight className="w-2.5 h-2.5 opacity-60 group-hover/link:opacity-100" />
+                                                                    </Link>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200/90">
+                                                                        <AlertCircle className="w-3 h-3 text-amber-600" />
+                                                                        <span>{log.finding_code}</span>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {log.project_code && (
+                                                            <div className="flex items-center gap-1.5">
+                                                                {log.project_id ? (
+                                                                    <Link
+                                                                        href={`/projects/${log.project_id}`}
+                                                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-800 border border-sky-200/90 hover:bg-sky-100 hover:border-sky-300 transition group/link"
+                                                                        title="Go to Project details"
+                                                                    >
+                                                                        <FolderKanban className="w-3 h-3 text-sky-600" />
+                                                                        <span>{log.project_code}</span>
+                                                                        <ArrowUpRight className="w-2.5 h-2.5 opacity-60 group-hover/link:opacity-100" />
+                                                                    </Link>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-sky-50 text-sky-800 border border-sky-200/90">
+                                                                        <FolderKanban className="w-3 h-3 text-sky-600" />
+                                                                        <span>{log.project_code}</span>
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
+
+                                                        {!log.finding_code && !log.project_code && (
+                                                            <span className="text-slate-300 text-[11px]">—</span>
+                                                        )}
+                                                    </div>
                                                 </td>
 
                                                 {/* DESCRIPTION */}
                                                 <td className="py-4 px-4 align-top">
-                                                    <div className="text-slate-800">
-                                                        {renderFormattedDescription(log.description)}
+                                                    <div className="text-slate-800 font-medium leading-relaxed">
+                                                        {log.description}
                                                     </div>
-                                                    {log.record_id && (
-                                                        <div className="text-[10px] text-slate-400 mt-1">
-                                                            Ref ID: #{log.record_id}
+                                                    {log.action_plan_task && (
+                                                        <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[11px] max-w-md truncate">
+                                                            <ListTodo className="w-3 h-3 text-purple-500 shrink-0" />
+                                                            <span className="font-medium text-slate-500 mr-0.5">Task:</span>
+                                                            <span className="truncate">{log.action_plan_task}</span>
                                                         </div>
                                                     )}
                                                 </td>
 
                                                 {/* DETAILS / INSPECT */}
                                                 <td className="py-4 px-4 align-top text-right whitespace-nowrap">
-                                                    {hasDiff ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setInspectLog(log)}
-                                                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200/80 border border-slate-200/80 transition cursor-pointer group-hover:border-slate-300"
-                                                            title="Inspect snapshot & value changes"
-                                                        >
-                                                            <Eye className="w-3.5 h-3.5 text-slate-500" />
-                                                            <span>Changes</span>
-                                                        </button>
-                                                    ) : (
-                                                        <span className="text-[11px] text-slate-300">—</span>
-                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setInspectLog(log)}
+                                                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 shadow-2xs hover:border-slate-300 transition cursor-pointer"
+                                                        title="Inspect full audit event details"
+                                                    >
+                                                        <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                                        <span>Details</span>
+                                                    </button>
                                                 </td>
                                             </tr>
                                         );
@@ -759,7 +879,7 @@ export default function AuditTrailPage() {
                 </div>
             </div>
 
-            {/* DIFF / CHANGES INSPECTION MODAL */}
+            {/* POLISHED DETAILS INSPECTION MODAL */}
             {inspectLog && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs transition-opacity"
@@ -770,21 +890,21 @@ export default function AuditTrailPage() {
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-slate-50/70">
+                        <div className="flex items-start justify-between px-6 py-4.5 border-b border-slate-100 bg-slate-50/70">
                             <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-slate-900 text-base">
-                                        Audit Log #{inspectLog.id}
+                                        Audit Event #{inspectLog.id}
                                     </span>
                                     <span
-                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                                             getActionMeta(inspectLog.action).badgeClass
                                         }`}
                                     >
                                         {getActionMeta(inspectLog.action).label}
                                     </span>
                                     <span
-                                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium border ${
+                                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-medium border ${
                                             getModuleMeta(inspectLog.module).badgeClass
                                         }`}
                                     >
@@ -793,9 +913,10 @@ export default function AuditTrailPage() {
                                 </div>
                                 <p className="text-xs text-slate-500 mt-1">
                                     Recorded on {formatDateTime(inspectLog.created_at)} by{" "}
-                                    <span className="font-semibold text-slate-700">
-                                        {inspectLog.user?.name || "System"}
-                                    </span>
+                                    <span className="font-semibold text-slate-800">
+                                        {inspectLog.user?.name || "System Automated"}
+                                    </span>{" "}
+                                    ({inspectLog.user?.role || "System"})
                                 </p>
                             </div>
                             <button
@@ -808,38 +929,93 @@ export default function AuditTrailPage() {
 
                         {/* Modal Body */}
                         <div className="p-6 overflow-y-auto space-y-4">
-                            {/* Description block */}
-                            <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl text-xs">
-                                <span className="font-semibold text-slate-500 uppercase tracking-wider block text-[10px] mb-1">
-                                    Event Summary
+                            {/* Context & Reference Banner */}
+                            {(inspectLog.project_code || inspectLog.finding_code) && (
+                                <div className="p-3.5 bg-slate-50 border border-slate-200/90 rounded-xl flex flex-wrap items-center justify-between gap-3 text-xs">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        {inspectLog.finding_code && (
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                                                    Finding:
+                                                </span>
+                                                <span className="font-mono font-bold px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded text-xs">
+                                                    {inspectLog.finding_code}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {inspectLog.project_code && (
+                                            <div className="flex items-center gap-1.5 ml-1">
+                                                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                                                    Project:
+                                                </span>
+                                                <span className="font-mono font-bold px-2 py-0.5 bg-sky-50 text-sky-900 border border-sky-200 rounded text-xs">
+                                                    {inspectLog.project_code}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Direct links */}
+                                    <div className="flex items-center gap-2">
+                                        {inspectLog.finding_id && (
+                                            <Link
+                                                href={`/findings/${inspectLog.finding_id}`}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-amber-800 bg-amber-100/70 hover:bg-amber-100 transition"
+                                                onClick={() => setInspectLog(null)}
+                                            >
+                                                <span>Open Finding</span>
+                                                <ExternalLink className="w-3 h-3" />
+                                            </Link>
+                                        )}
+                                        {inspectLog.project_id && (
+                                            <Link
+                                                href={`/projects/${inspectLog.project_id}`}
+                                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-sky-800 bg-sky-100/70 hover:bg-sky-100 transition"
+                                                onClick={() => setInspectLog(null)}
+                                            >
+                                                <span>Open Project</span>
+                                                <ExternalLink className="w-3 h-3" />
+                                            </Link>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Event summary text */}
+                            <div className="p-3.5 bg-white border border-slate-200 rounded-xl text-xs space-y-1">
+                                <span className="font-semibold text-slate-400 uppercase tracking-wider block text-[10px]">
+                                    Activity Summary
                                 </span>
-                                <div className="text-slate-800 font-medium">
+                                <div className="text-slate-800 font-semibold text-sm leading-snug">
                                     {inspectLog.description}
                                 </div>
+                                {inspectLog.action_plan_task && (
+                                    <div className="text-xs text-slate-600 pt-1">
+                                        <span className="font-semibold text-slate-500">Action Plan: </span>
+                                        {inspectLog.action_plan_task}
+                                    </div>
+                                )}
                             </div>
 
-                            {/* Diff Viewer */}
-                            <div>
-                                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-                                    <span>Field Level Comparison</span>
-                                    <span className="text-[11px] font-normal text-slate-400">
-                                        Old vs New Snapshot
-                                    </span>
-                                </h4>
-
-                                <DiffRenderer
-                                    oldValues={inspectLog.old_values}
-                                    newValues={inspectLog.new_values}
-                                />
-                            </div>
+                            {/* Intelligent Event Details Presentation */}
+                            <CleanEventDetails
+                                action={inspectLog.action}
+                                module={inspectLog.module}
+                                oldValues={inspectLog.old_values}
+                                newValues={inspectLog.new_values}
+                            />
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="flex justify-end gap-2 px-6 py-3.5 border-t border-slate-100 bg-slate-50/50">
+                        <div className="flex items-center justify-between px-6 py-3.5 border-t border-slate-100 bg-slate-50/50">
+                            <span className="text-[11px] text-slate-400">
+                                Log Reference ID: #{inspectLog.id}
+                            </span>
                             <button
                                 type="button"
                                 onClick={() => setInspectLog(null)}
-                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 transition cursor-pointer"
+                                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-100 shadow-2xs transition cursor-pointer"
                             >
                                 Close
                             </button>
@@ -851,89 +1027,131 @@ export default function AuditTrailPage() {
     );
 }
 
-// Subcomponent: Field-by-Field Diff Renderer
-function DiffRenderer({ oldValues, newValues }) {
-    const isOldObj = oldValues && typeof oldValues === "object";
-    const isNewObj = newValues && typeof newValues === "object";
+// Subcomponent: Clean, Intelligent Event Details Inspector
+function CleanEventDetails({ action, module, oldValues, newValues }) {
+    const act = normalize(action);
+    const isCreate = act === "create" || (!oldValues && Boolean(newValues));
 
-    if (!isOldObj && !isNewObj) {
+    // CASE 1: CREATION EVENT -> Show clean Key-Value Attribute Cards (NO empty '-' columns!)
+    if (isCreate) {
+        const raw = newValues && typeof newValues === "object" ? newValues : {};
+        // Filter out redundant technical dumps
+        const keys = Object.keys(raw).filter(
+            (k) =>
+                !["created_at", "updated_at", "password", "remember_token"].includes(k) &&
+                !(k === "creator" && typeof raw[k] === "object") // avoid raw creator object dump
+        );
+
+        if (keys.length === 0) {
+            return (
+                <div className="p-4 rounded-xl bg-slate-50 text-slate-500 text-xs text-center border border-dashed border-slate-200">
+                    Record successfully registered with default parameters.
+                </div>
+            );
+        }
+
         return (
-            <div className="p-4 rounded-xl bg-slate-50 text-slate-400 text-xs italic text-center border border-dashed border-slate-200">
-                No structured field changes recorded for this action.
+            <div>
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5">
+                    Registered Attributes
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {keys.map((k) => (
+                        <div
+                            key={k}
+                            className="p-3 rounded-xl bg-slate-50/80 border border-slate-200/80 flex flex-col justify-between"
+                        >
+                            <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">
+                                {formatFieldName(k)}
+                            </span>
+                            <div className="text-xs font-semibold text-slate-800">
+                                {formatValueDisplay(raw[k], k)}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }
 
-    // Merge unique keys
-    const allKeys = Array.from(
+    // CASE 2: UPDATES / WORKFLOW / EXTEND -> Show Only Actual Field Diffs with Before -> After Transitions
+    const isOldObj = oldValues && typeof oldValues === "object";
+    const isNewObj = newValues && typeof newValues === "object";
+
+    // Collect keys where old != new
+    const changedKeys = Array.from(
         new Set([
             ...(isOldObj ? Object.keys(oldValues) : []),
             ...(isNewObj ? Object.keys(newValues) : []),
         ])
-    ).filter(
-        (key) =>
-            !["created_at", "updated_at", "id", "password", "remember_token"].includes(key)
-    );
+    ).filter((key) => {
+        if (["created_at", "updated_at", "id", "password", "remember_token"].includes(key)) return false;
+        const oldV = isOldObj ? oldValues[key] : undefined;
+        const newV = isNewObj ? newValues[key] : undefined;
+        return JSON.stringify(oldV) !== JSON.stringify(newV);
+    });
 
-    if (allKeys.length === 0) {
+    if (changedKeys.length === 0) {
         return (
-            <div className="p-4 rounded-xl bg-slate-50 text-slate-500 text-xs text-center border border-slate-200">
-                No modified fields detected.
+            <div className="p-4 rounded-xl bg-slate-50 text-slate-500 text-xs text-center border border-dashed border-slate-200">
+                Action executed successfully with no persistent data changes.
             </div>
         );
     }
 
-    const formatVal = (v) => {
-        if (v === null || v === undefined) return <span className="text-slate-300 italic">null</span>;
-        if (typeof v === "boolean") return v ? "true" : "false";
-        if (typeof v === "object") return JSON.stringify(v);
-        return String(v);
-    };
-
     return (
-        <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 text-xs">
-            <div className="grid grid-cols-12 bg-slate-100/70 py-2 px-3 font-semibold text-[11px] text-slate-600 uppercase tracking-wider">
-                <div className="col-span-4">Field</div>
-                <div className="col-span-4">Previous Value</div>
-                <div className="col-span-4">New Value</div>
+        <div>
+            <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+                <span>Modified Fields & Transitions</span>
+                <span className="text-[11px] font-medium text-slate-400">
+                    {changedKeys.length} field{changedKeys.length > 1 ? "s" : ""} modified
+                </span>
+            </h4>
+
+            <div className="space-y-2.5">
+                {changedKeys.map((key) => {
+                    const oldVal = isOldObj ? oldValues[key] : undefined;
+                    const newVal = isNewObj ? newValues[key] : undefined;
+
+                    return (
+                        <div
+                            key={key}
+                            className="p-3.5 rounded-xl border border-slate-200 bg-white shadow-2xs space-y-2"
+                        >
+                            <div className="font-semibold text-xs text-slate-700 flex items-center justify-between">
+                                <span>{formatFieldName(key)}</span>
+                                <span className="font-mono text-[10px] text-slate-400">{key}</span>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 pt-1">
+                                {/* Previous Value */}
+                                <div className="flex-1 p-2 rounded-lg bg-rose-50/70 border border-rose-200/70 text-xs">
+                                    <span className="text-[10px] font-semibold text-rose-500 uppercase tracking-wider block mb-0.5">
+                                        Previous
+                                    </span>
+                                    <div className="text-rose-900 font-medium break-all line-through opacity-85">
+                                        {formatValueDisplay(oldVal, key)}
+                                    </div>
+                                </div>
+
+                                <div className="hidden sm:flex items-center justify-center text-slate-400">
+                                    <ArrowRight className="w-4 h-4" />
+                                </div>
+
+                                {/* New Value */}
+                                <div className="flex-1 p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/70 text-xs">
+                                    <span className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider block mb-0.5">
+                                        Updated
+                                    </span>
+                                    <div className="text-emerald-950 font-bold break-all">
+                                        {formatValueDisplay(newVal, key)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
-
-            {allKeys.map((key) => {
-                const oldVal = isOldObj ? oldValues[key] : undefined;
-                const newVal = isNewObj ? newValues[key] : undefined;
-                const isChanged = JSON.stringify(oldVal) !== JSON.stringify(newVal);
-
-                return (
-                    <div
-                        key={key}
-                        className={`grid grid-cols-12 py-2.5 px-3 items-center ${
-                            isChanged ? "bg-amber-50/40" : "bg-white"
-                        }`}
-                    >
-                        <div className="col-span-4 font-mono font-medium text-slate-700 truncate pr-2">
-                            {key.replace(/_/g, " ")}
-                        </div>
-                        <div className="col-span-4 pr-2 font-mono text-[11px] text-rose-700 truncate">
-                            {oldVal !== undefined ? (
-                                <span className={isChanged ? "bg-rose-50 px-1 py-0.5 rounded border border-rose-200/60" : ""}>
-                                    {formatVal(oldVal)}
-                                </span>
-                            ) : (
-                                <span className="text-slate-300">—</span>
-                            )}
-                        </div>
-                        <div className="col-span-4 font-mono text-[11px] text-emerald-700 truncate">
-                            {newVal !== undefined ? (
-                                <span className={isChanged ? "bg-emerald-50 px-1 py-0.5 rounded border border-emerald-200/60 font-semibold" : ""}>
-                                    {formatVal(newVal)}
-                                </span>
-                            ) : (
-                                <span className="text-slate-300">—</span>
-                            )}
-                        </div>
-                    </div>
-                );
-            })}
         </div>
     );
 }
