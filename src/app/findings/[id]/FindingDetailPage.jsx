@@ -283,7 +283,7 @@ export default function FindingDetailPage() {
                                                 ))}
                                             </div>
                                         ) : (
-                                            <span className="text-slate-400 italic">Belum ada PIC terdaftar</span>
+                                            <span className="text-slate-400 italic">No PICs registered</span>
                                         )}
 
                                         <span className="text-slate-300">•</span>

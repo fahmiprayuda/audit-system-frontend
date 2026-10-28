@@ -300,7 +300,7 @@ export default function ActionPlanCard({
 
                 {workflowAction[ap.id] && (
                   <p className="text-xs text-blue-600 font-medium pl-1">
-                    ℹ️ Pesan ini juga akan memperbarui status workflow temuan.
+                    ℹ️ This message will also update the workflow status.
                   </p>
                 )}
               </div>
