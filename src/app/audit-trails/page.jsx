@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, forwardRef } from "react";
 import api from "@/lib/axios";
 import { formatDateTime, timeAgo, formatDateForApi, formatDate } from "@/utils/date";
 import { exportToCsv } from "@/utils/exportCsv";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import Link from "next/link";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import {
     History,
     Search,
@@ -35,6 +37,7 @@ import {
     ArrowUpRight,
     Calendar,
     CalendarDays,
+    ChevronDown,
     Globe,
     Filter,
     Loader2,
@@ -291,6 +294,22 @@ function getRecentMonths(count = 18) {
     return list;
 }
 
+// Custom Button Trigger for react-datepicker Range
+const CustomDateRangeInput = forwardRef(({ value, onClick }, ref) => (
+    <button
+        type="button"
+        onClick={onClick}
+        ref={ref}
+        className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition cursor-pointer"
+        title="Klik untuk membuka 2 kalender rentang tanggal"
+    >
+        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+        <span>{value || "Pilih Rentang Tanggal"}</span>
+        <ChevronDown className="w-3 h-3 text-slate-400" />
+    </button>
+));
+CustomDateRangeInput.displayName = "CustomDateRangeInput";
+
 export default function AuditTrailPage() {
     const [loading, setLoading] = useState(true);
     const [logs, setLogs] = useState([]);
@@ -314,6 +333,7 @@ export default function AuditTrailPage() {
     );
     const [dateFrom, setDateFrom] = useState(initialRange.from);
     const [dateTo, setDateTo] = useState(initialRange.to);
+    const [customSelectingStart, setCustomSelectingStart] = useState(null);
     const [perPage, setPerPage] = useState(20);
     const [page, setPage] = useState(1);
 
@@ -349,6 +369,7 @@ export default function AuditTrailPage() {
     // Handle Period Type change
     const handlePeriodTypeChange = (newType) => {
         setPeriodType(newType);
+        setCustomSelectingStart(null);
         setPage(1);
         const now = new Date();
 
@@ -386,50 +407,30 @@ export default function AuditTrailPage() {
         setDateTo(range.to);
     };
 
-    // Handle Custom Date From with strict 31-day max guardrail
-    const handleCustomDateFrom = (newFrom) => {
-        setDateFrom(newFrom);
-        if (!newFrom) return;
-        const fromTime = new Date(newFrom).getTime();
+    // Handle Custom Range selection with 2-calendar DatePicker & strict 31-day max guardrail
+    const handleCustomRangeChange = (update) => {
+        if (!update) return;
+        const [start, end] = update;
 
-        if (dateTo) {
-            const toTime = new Date(dateTo).getTime();
-            const diffDays = Math.round((toTime - fromTime) / (1000 * 60 * 60 * 24));
-            if (diffDays < 0 || diffDays > 31) {
-                // Auto clamp dateTo to 30 days ahead
-                const clamped = new Date(fromTime);
+        if (start && !end) {
+            setCustomSelectingStart(start);
+        } else if (start && end) {
+            setCustomSelectingStart(null);
+            const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays > 31) {
+                // Auto clamp end date to exactly 30 days from start (31 days total)
+                const clamped = new Date(start);
                 clamped.setDate(clamped.getDate() + 30);
+                setDateFrom(formatDateForApi(start));
                 setDateTo(formatDateForApi(clamped));
+            } else {
+                setDateFrom(formatDateForApi(start));
+                setDateTo(formatDateForApi(end));
             }
+            setPage(1);
         } else {
-            const clamped = new Date(fromTime);
-            clamped.setDate(clamped.getDate() + 30);
-            setDateTo(formatDateForApi(clamped));
+            setCustomSelectingStart(null);
         }
-        setPage(1);
-    };
-
-    // Handle Custom Date To with strict 31-day max guardrail
-    const handleCustomDateTo = (newTo) => {
-        setDateTo(newTo);
-        if (!newTo) return;
-        const toTime = new Date(newTo).getTime();
-
-        if (dateFrom) {
-            const fromTime = new Date(dateFrom).getTime();
-            const diffDays = Math.round((toTime - fromTime) / (1000 * 60 * 60 * 24));
-            if (diffDays < 0 || diffDays > 31) {
-                // Auto clamp dateFrom to 30 days prior
-                const clamped = new Date(toTime);
-                clamped.setDate(clamped.getDate() - 30);
-                setDateFrom(formatDateForApi(clamped));
-            }
-        } else {
-            const clamped = new Date(toTime);
-            clamped.setDate(clamped.getDate() - 30);
-            setDateFrom(formatDateForApi(clamped));
-        }
-        setPage(1);
     };
 
     // Load audit trail data
@@ -487,6 +488,7 @@ export default function AuditTrailPage() {
         setModuleFilter("");
         setActionFilter("");
         setPeriodType("current_month");
+        setCustomSelectingStart(null);
         const currentRange = getMonthRange(new Date().getFullYear(), new Date().getMonth());
         setDateFrom(currentRange.from);
         setDateTo(currentRange.to);
@@ -658,13 +660,13 @@ export default function AuditTrailPage() {
                         {/* Search Input & All-Periods Toggle */}
                         <div className="md:col-span-5 space-y-1.5">
                             <div className="relative">
-                                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                 <input
                                     type="text"
                                     placeholder="Search by Project (AUD-...), Finding (FND-...), Actor, or Action..."
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
-                                    className="w-full pl-9.5 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
+                                    className="w-full pl-10 pr-9 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
                                 />
                                 {search && (
                                     <button
@@ -786,28 +788,31 @@ export default function AuditTrailPage() {
                                 </select>
                             )}
 
-                            {/* Sub-selector: Custom Range with 31-day limit */}
+                            {/* Sub-selector: Custom Range with 2-month DatePicker */}
                             {periodType === "custom_range" && (
                                 <div className="flex flex-wrap items-center gap-2 animate-in fade-in duration-200">
-                                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Dari:</span>
-                                        <input
-                                            type="date"
-                                            value={dateFrom}
-                                            onChange={(e) => handleCustomDateFrom(e.target.value)}
-                                            className="text-xs text-slate-800 bg-transparent focus:outline-none cursor-pointer"
-                                        />
-                                    </div>
-                                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
-                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Sampai:</span>
-                                        <input
-                                            type="date"
-                                            value={dateTo}
-                                            onChange={(e) => handleCustomDateTo(e.target.value)}
-                                            className="text-xs text-slate-800 bg-transparent focus:outline-none cursor-pointer"
-                                        />
-                                    </div>
-                                    <span className="text-[11px] text-slate-400 italic">
+                                    <DatePicker
+                                        selectsRange={true}
+                                        startDate={dateFrom ? new Date(`${dateFrom}T00:00:00`) : null}
+                                        endDate={dateTo ? new Date(`${dateTo}T00:00:00`) : null}
+                                        onChange={handleCustomRangeChange}
+                                        monthsShown={2}
+                                        minDate={
+                                            customSelectingStart
+                                                ? new Date(customSelectingStart.getTime() - 30 * 24 * 60 * 60 * 1000)
+                                                : undefined
+                                        }
+                                        maxDate={
+                                            customSelectingStart
+                                                ? new Date(customSelectingStart.getTime() + 30 * 24 * 60 * 60 * 1000)
+                                                : undefined
+                                        }
+                                        onCalendarClose={() => setCustomSelectingStart(null)}
+                                        dateFormat="d MMM yyyy"
+                                        popperPlacement="bottom-start"
+                                        customInput={<CustomDateRangeInput />}
+                                    />
+                                    <span className="text-[11px] text-slate-400 font-medium">
                                         (Maks. 31 hari)
                                     </span>
                                 </div>
