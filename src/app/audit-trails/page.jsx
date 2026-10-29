@@ -33,6 +33,11 @@ import {
     ExternalLink,
     FileText,
     ArrowUpRight,
+    Calendar,
+    CalendarDays,
+    Globe,
+    Filter,
+    Loader2,
 } from "lucide-react";
 
 // Helper: Normalize string
@@ -261,18 +266,54 @@ function formatValueDisplay(v, key = "") {
     return <span>{str}</span>;
 }
 
+// Helper: get month range { from: 'YYYY-MM-01', to: 'YYYY-MM-lastDay' }
+function getMonthRange(year, month) {
+    const start = new Date(year, month, 1);
+    const end = new Date(year, month + 1, 0);
+    return {
+        from: formatDateForApi(start),
+        to: formatDateForApi(end),
+    };
+}
+
+// Helper: list of available months for "Pilih Bulan Tertentu" (last 18 months)
+function getRecentMonths(count = 18) {
+    const list = [];
+    const now = new Date();
+    for (let i = 0; i < count; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = d.getMonth();
+        const key = `${y}-${String(m + 1).padStart(2, "0")}`;
+        const label = d.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+        list.push({ key, label, year: y, month: m });
+    }
+    return list;
+}
+
 export default function AuditTrailPage() {
     const [loading, setLoading] = useState(true);
     const [logs, setLogs] = useState([]);
+    const [isExporting, setIsExporting] = useState(false);
+
+    // Recent months reference
+    const availableMonths = getRecentMonths(18);
 
     // Filters state
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [allPeriodsSearch, setAllPeriodsSearch] = useState(false);
     const [moduleFilter, setModuleFilter] = useState("");
     const [actionFilter, setActionFilter] = useState("");
-    const [datePreset, setDatePreset] = useState("all");
-    const [dateFrom, setDateFrom] = useState("");
-    const [dateTo, setDateTo] = useState("");
+
+    // Period state (Opsi B: default current month)
+    const initialRange = getMonthRange(new Date().getFullYear(), new Date().getMonth());
+    const [periodType, setPeriodType] = useState("current_month"); // "current_month" | "previous_month" | "select_month" | "custom_range"
+    const [selectedMonthKey, setSelectedMonthKey] = useState(
+        `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
+    );
+    const [dateFrom, setDateFrom] = useState(initialRange.from);
+    const [dateTo, setDateTo] = useState(initialRange.to);
     const [perPage, setPerPage] = useState(20);
     const [page, setPage] = useState(1);
 
@@ -297,30 +338,98 @@ export default function AuditTrailPage() {
         return () => clearTimeout(timer);
     }, [search]);
 
-    // Handle date presets
-    const handleDatePreset = (preset) => {
-        setDatePreset(preset);
-        setPage(1);
-        const today = new Date();
-
-        if (preset === "all") {
-            setDateFrom("");
-            setDateTo("");
-        } else if (preset === "today") {
-            const str = formatDateForApi(today);
-            setDateFrom(str);
-            setDateTo(str);
-        } else if (preset === "7days") {
-            const past = new Date();
-            past.setDate(today.getDate() - 7);
-            setDateFrom(formatDateForApi(past));
-            setDateTo(formatDateForApi(today));
-        } else if (preset === "30days") {
-            const past = new Date();
-            past.setDate(today.getDate() - 30);
-            setDateFrom(formatDateForApi(past));
-            setDateTo(formatDateForApi(today));
+    // Automatically uncheck allPeriodsSearch if search query is emptied
+    useEffect(() => {
+        if (!search.trim() && allPeriodsSearch) {
+            setAllPeriodsSearch(false);
+            setPage(1);
         }
+    }, [search, allPeriodsSearch]);
+
+    // Handle Period Type change
+    const handlePeriodTypeChange = (newType) => {
+        setPeriodType(newType);
+        setPage(1);
+        const now = new Date();
+
+        if (newType === "current_month") {
+            const range = getMonthRange(now.getFullYear(), now.getMonth());
+            setDateFrom(range.from);
+            setDateTo(range.to);
+        } else if (newType === "previous_month") {
+            const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            const range = getMonthRange(prev.getFullYear(), prev.getMonth());
+            setDateFrom(range.from);
+            setDateTo(range.to);
+        } else if (newType === "select_month") {
+            const [yStr, mStr] = selectedMonthKey.split("-");
+            const range = getMonthRange(parseInt(yStr, 10), parseInt(mStr, 10) - 1);
+            setDateFrom(range.from);
+            setDateTo(range.to);
+        } else if (newType === "custom_range") {
+            // Keep current dateFrom/dateTo or set to current month if empty
+            if (!dateFrom || !dateTo) {
+                const range = getMonthRange(now.getFullYear(), now.getMonth());
+                setDateFrom(range.from);
+                setDateTo(range.to);
+            }
+        }
+    };
+
+    // Handle Month Selection from dropdown
+    const handleSpecificMonthChange = (monthKey) => {
+        setSelectedMonthKey(monthKey);
+        setPage(1);
+        const [yStr, mStr] = monthKey.split("-");
+        const range = getMonthRange(parseInt(yStr, 10), parseInt(mStr, 10) - 1);
+        setDateFrom(range.from);
+        setDateTo(range.to);
+    };
+
+    // Handle Custom Date From with strict 31-day max guardrail
+    const handleCustomDateFrom = (newFrom) => {
+        setDateFrom(newFrom);
+        if (!newFrom) return;
+        const fromTime = new Date(newFrom).getTime();
+
+        if (dateTo) {
+            const toTime = new Date(dateTo).getTime();
+            const diffDays = Math.round((toTime - fromTime) / (1000 * 60 * 60 * 24));
+            if (diffDays < 0 || diffDays > 31) {
+                // Auto clamp dateTo to 30 days ahead
+                const clamped = new Date(fromTime);
+                clamped.setDate(clamped.getDate() + 30);
+                setDateTo(formatDateForApi(clamped));
+            }
+        } else {
+            const clamped = new Date(fromTime);
+            clamped.setDate(clamped.getDate() + 30);
+            setDateTo(formatDateForApi(clamped));
+        }
+        setPage(1);
+    };
+
+    // Handle Custom Date To with strict 31-day max guardrail
+    const handleCustomDateTo = (newTo) => {
+        setDateTo(newTo);
+        if (!newTo) return;
+        const toTime = new Date(newTo).getTime();
+
+        if (dateFrom) {
+            const fromTime = new Date(dateFrom).getTime();
+            const diffDays = Math.round((toTime - fromTime) / (1000 * 60 * 60 * 24));
+            if (diffDays < 0 || diffDays > 31) {
+                // Auto clamp dateFrom to 30 days prior
+                const clamped = new Date(toTime);
+                clamped.setDate(clamped.getDate() - 30);
+                setDateFrom(formatDateForApi(clamped));
+            }
+        } else {
+            const clamped = new Date(toTime);
+            clamped.setDate(clamped.getDate() - 30);
+            setDateFrom(formatDateForApi(clamped));
+        }
+        setPage(1);
     };
 
     // Load audit trail data
@@ -331,11 +440,22 @@ export default function AuditTrailPage() {
                 page,
                 per_page: perPage,
             };
-            if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
+
+            if (debouncedSearch.trim()) {
+                params.search = debouncedSearch.trim();
+                if (allPeriodsSearch) {
+                    params.all_periods = 1;
+                }
+            }
+
+            // Only send period when not in global all-periods search mode
+            if (!allPeriodsSearch || !debouncedSearch.trim()) {
+                if (dateFrom) params.date_from = dateFrom;
+                if (dateTo) params.date_to = dateTo;
+            }
+
             if (moduleFilter) params.module = moduleFilter;
             if (actionFilter) params.action = actionFilter;
-            if (dateFrom) params.date_from = dateFrom;
-            if (dateTo) params.date_to = dateTo;
 
             const res = await api.get("/audit-trails", { params });
             const data = res.data;
@@ -353,7 +473,7 @@ export default function AuditTrailPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, perPage, debouncedSearch, moduleFilter, actionFilter, dateFrom, dateTo]);
+    }, [page, perPage, debouncedSearch, allPeriodsSearch, moduleFilter, actionFilter, dateFrom, dateTo]);
 
     useEffect(() => {
         loadData();
@@ -363,64 +483,122 @@ export default function AuditTrailPage() {
     const handleResetFilters = () => {
         setSearch("");
         setDebouncedSearch("");
+        setAllPeriodsSearch(false);
         setModuleFilter("");
         setActionFilter("");
-        setDatePreset("all");
-        setDateFrom("");
-        setDateTo("");
+        setPeriodType("current_month");
+        const currentRange = getMonthRange(new Date().getFullYear(), new Date().getMonth());
+        setDateFrom(currentRange.from);
+        setDateTo(currentRange.to);
+        setSelectedMonthKey(
+            `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
+        );
         setPage(1);
     };
 
+    const isCurrentMonthDefault =
+        periodType === "current_month" &&
+        dateFrom === initialRange.from &&
+        dateTo === initialRange.to;
+
     const hasActiveFilters = Boolean(
-        search || moduleFilter || actionFilter || datePreset !== "all" || dateFrom || dateTo
+        search ||
+        moduleFilter ||
+        actionFilter ||
+        !isCurrentMonthDefault ||
+        allPeriodsSearch
     );
 
-    // Export current page or all loaded logs to CSV
-    const handleExportCsv = () => {
-        if (!logs.length) return alert("No logs available to export");
+    // Export current page or all records in active period to CSV
+    const handleExportCsv = async () => {
+        if (!logs.length && pagination.total === 0) return alert("No logs available to export");
 
-        const columns = [
-            { key: "id", label: "LOG ID" },
-            {
-                key: "created_at",
-                label: "TIMESTAMP",
-                format: (val) => formatDateTime(val),
-            },
-            {
-                key: "user",
-                label: "ACTOR NAME",
-                format: (val, row) => row.user?.name || "System",
-            },
-            {
-                key: "user_role",
-                label: "ACTOR ROLE",
-                format: (_, row) => row.user?.role || "-",
-            },
-            {
-                key: "module",
-                label: "MODULE",
-                format: (val) => String(val).toUpperCase(),
-            },
-            {
-                key: "action",
-                label: "ACTION",
-                format: (val) => String(val).toUpperCase(),
-            },
-            {
-                key: "project_code",
-                label: "PROJECT CODE",
-                format: (val, row) => row.project_code || "-",
-            },
-            {
-                key: "finding_code",
-                label: "FINDING CODE",
-                format: (val, row) => row.finding_code || "-",
-            },
-            { key: "description", label: "DESCRIPTION" },
-        ];
+        try {
+            setIsExporting(true);
+            let exportData = logs;
 
-        const filename = `audit-trail-${new Date().toISOString().slice(0, 10)}.csv`;
-        exportToCsv(logs, filename, columns);
+            // If there are more records than currently visible on page 1, fetch all for this period
+            if (pagination.total > logs.length) {
+                const params = {
+                    per_page: Math.min(pagination.total, 1000),
+                };
+                if (debouncedSearch.trim()) {
+                    params.search = debouncedSearch.trim();
+                    if (allPeriodsSearch) params.all_periods = 1;
+                }
+                if (!allPeriodsSearch || !debouncedSearch.trim()) {
+                    if (dateFrom) params.date_from = dateFrom;
+                    if (dateTo) params.date_to = dateTo;
+                }
+                if (moduleFilter) params.module = moduleFilter;
+                if (actionFilter) params.action = actionFilter;
+
+                const res = await api.get("/audit-trails", { params });
+                exportData = res.data?.data || logs;
+            }
+
+            const columns = [
+                { key: "id", label: "LOG ID" },
+                {
+                    key: "created_at",
+                    label: "TIMESTAMP",
+                    format: (val) => formatDateTime(val),
+                },
+                {
+                    key: "user",
+                    label: "ACTOR NAME",
+                    format: (val, row) => row.user?.name || "System",
+                },
+                {
+                    key: "user_role",
+                    label: "ACTOR ROLE",
+                    format: (_, row) => row.user?.role || "-",
+                },
+                {
+                    key: "module",
+                    label: "MODULE",
+                    format: (val) => String(val).toUpperCase(),
+                },
+                {
+                    key: "action",
+                    label: "ACTION",
+                    format: (val) => String(val).toUpperCase(),
+                },
+                {
+                    key: "project_code",
+                    label: "PROJECT CODE",
+                    format: (val, row) => row.project_code || "-",
+                },
+                {
+                    key: "finding_code",
+                    label: "FINDING CODE",
+                    format: (val, row) => row.finding_code || "-",
+                },
+                { key: "description", label: "DESCRIPTION" },
+            ];
+
+            // Build period-reflective filename
+            let filename = "audit-trail";
+            if (allPeriodsSearch && debouncedSearch) {
+                filename += `-all-periods-${debouncedSearch.trim().replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+            } else if (dateFrom && dateTo) {
+                if (dateFrom.slice(0, 7) === dateTo.slice(0, 7) && dateFrom.endsWith("-01")) {
+                    filename += `-${dateFrom.slice(0, 7)}`;
+                } else {
+                    filename += `-${dateFrom}_sd_${dateTo}`;
+                }
+            } else {
+                filename += `-${new Date().toISOString().slice(0, 10)}`;
+            }
+            filename += ".csv";
+
+            exportToCsv(exportData, filename, columns);
+        } catch (err) {
+            console.error("Failed to export audit trail CSV:", err);
+            alert("Gagal melakukan export CSV. Silakan coba beberapa saat lagi.");
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     return (
@@ -451,12 +629,16 @@ export default function AuditTrailPage() {
                         <button
                             type="button"
                             onClick={handleExportCsv}
-                            disabled={logs.length === 0}
+                            disabled={logs.length === 0 || isExporting}
                             className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200/80 hover:bg-slate-50 rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer"
                             title="Export filtered records as CSV"
                         >
-                            <Download className="w-4 h-4 text-slate-500" />
-                            <span>Export CSV</span>
+                            {isExporting ? (
+                                <Loader2 className="w-4 h-4 text-slate-500 animate-spin" />
+                            ) : (
+                                <Download className="w-4 h-4 text-slate-500" />
+                            )}
+                            <span>{isExporting ? "Exporting..." : "Export CSV"}</span>
                         </button>
                         <button
                             type="button"
@@ -471,24 +653,47 @@ export default function AuditTrailPage() {
 
                 {/* FILTER CONTROLS BAR */}
                 <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs space-y-3.5">
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
-                        {/* Search Input */}
-                        <div className="relative md:col-span-5">
-                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type="text"
-                                placeholder="Search by Project (AUD-...), Finding (FND-...), Actor, or Action..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="w-full pl-9.5 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
-                            />
-                            {search && (
-                                <button
-                                    onClick={() => setSearch("")}
-                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
+                    {/* Top Row: Search, Module, Action, Reset */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+                        {/* Search Input & All-Periods Toggle */}
+                        <div className="md:col-span-5 space-y-1.5">
+                            <div className="relative">
+                                <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by Project (AUD-...), Finding (FND-...), Actor, or Action..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full pl-9.5 pr-8 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition"
+                                />
+                                {search && (
+                                    <button
+                                        onClick={() => setSearch("")}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                )}
+                            </div>
+
+                            {search.trim().length > 0 && (
+                                <div className="flex items-center gap-2 px-1">
+                                    <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 border border-blue-200/80 text-[11px] font-semibold text-blue-700 cursor-pointer select-none hover:bg-blue-100/70 transition">
+                                        <input
+                                            type="checkbox"
+                                            checked={allPeriodsSearch}
+                                            onChange={(e) => {
+                                                setAllPeriodsSearch(e.target.checked);
+                                                setPage(1);
+                                            }}
+                                            className="w-3.5 h-3.5 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
+                                        />
+                                        <span>Cari di Semua Periode</span>
+                                    </label>
+                                    <span className="text-[11px] text-slate-400">
+                                        (abaikan batas filter bulan)
+                                    </span>
+                                </div>
                             )}
                         </div>
 
@@ -531,7 +736,7 @@ export default function AuditTrailPage() {
                         </div>
 
                         {/* Reset Button */}
-                        <div className="md:col-span-1 flex justify-end">
+                        <div className="md:col-span-1 flex md:justify-end">
                             {hasActiveFilters && (
                                 <button
                                     onClick={handleResetFilters}
@@ -545,40 +750,90 @@ export default function AuditTrailPage() {
                         </div>
                     </div>
 
-                    {/* Quick Date Presets Bar */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mr-1">
-                                Timeframe:
-                            </span>
-                            {[
-                                { key: "all", label: "All Time" },
-                                { key: "today", label: "Today" },
-                                { key: "7days", label: "Last 7 Days" },
-                                { key: "30days", label: "Last 30 Days" },
-                            ].map((p) => {
-                                const active = datePreset === p.key;
-                                return (
-                                    <button
-                                        key={p.key}
-                                        type="button"
-                                        onClick={() => handleDatePreset(p.key)}
-                                        className={`px-2.5 py-1 text-xs font-medium rounded-lg transition cursor-pointer ${
-                                            active
-                                                ? "bg-slate-900 text-white shadow-2xs"
-                                                : "bg-slate-100/70 hover:bg-slate-200/70 text-slate-600"
-                                        }`}
-                                    >
-                                        {p.label}
-                                    </button>
-                                );
-                            })}
+                    {/* Bottom Row: Period Selector (Opsi B) & Active Indicator */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+                        {/* Left: Period Controls */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mr-1">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                <span>Periode:</span>
+                            </div>
+
+                            {/* Main Period Select */}
+                            <select
+                                value={periodType}
+                                onChange={(e) => handlePeriodTypeChange(e.target.value)}
+                                className="px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
+                            >
+                                <option value="current_month">Bulan Ini</option>
+                                <option value="previous_month">Bulan Lalu</option>
+                                <option value="select_month">Pilih Bulan Tertentu</option>
+                                <option value="custom_range">Custom Range (Maks. 31 Hari)</option>
+                            </select>
+
+                            {/* Sub-selector: Specific Month */}
+                            {periodType === "select_month" && (
+                                <select
+                                    value={selectedMonthKey}
+                                    onChange={(e) => handleSpecificMonthChange(e.target.value)}
+                                    className="px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer animate-in fade-in duration-200"
+                                >
+                                    {availableMonths.map((m) => (
+                                        <option key={m.key} value={m.key}>
+                                            {m.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+
+                            {/* Sub-selector: Custom Range with 31-day limit */}
+                            {periodType === "custom_range" && (
+                                <div className="flex flex-wrap items-center gap-2 animate-in fade-in duration-200">
+                                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Dari:</span>
+                                        <input
+                                            type="date"
+                                            value={dateFrom}
+                                            onChange={(e) => handleCustomDateFrom(e.target.value)}
+                                            className="text-xs text-slate-800 bg-transparent focus:outline-none cursor-pointer"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1">
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase">Sampai:</span>
+                                        <input
+                                            type="date"
+                                            value={dateTo}
+                                            onChange={(e) => handleCustomDateTo(e.target.value)}
+                                            className="text-xs text-slate-800 bg-transparent focus:outline-none cursor-pointer"
+                                        />
+                                    </div>
+                                    <span className="text-[11px] text-slate-400 italic">
+                                        (Maks. 31 hari)
+                                    </span>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Active summary pill */}
-                        <div className="text-[11px] text-slate-400">
-                            Showing page <span className="font-semibold text-slate-600">{pagination.current}</span> of{" "}
-                            <span className="font-semibold text-slate-600">{pagination.last}</span>
+                        {/* Right: Active Period Badge / Mode Indicator */}
+                        <div className="flex items-center gap-2">
+                            {allPeriodsSearch && debouncedSearch ? (
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                                    <Globe className="w-3.5 h-3.5 text-blue-600" />
+                                    <span>Mode Pencarian: Semua Periode</span>
+                                </div>
+                            ) : (
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200/80">
+                                    <CalendarDays className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>
+                                        {formatDate(dateFrom)} – {formatDate(dateTo)}
+                                    </span>
+                                </div>
+                            )}
+
+                            <div className="text-[11px] text-slate-400 hidden sm:inline">
+                                Hal <span className="font-semibold text-slate-600">{pagination.current}</span> /{" "}
+                                <span className="font-semibold text-slate-600">{pagination.last}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
