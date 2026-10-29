@@ -333,7 +333,12 @@ export default function AuditTrailPage() {
     );
     const [dateFrom, setDateFrom] = useState(initialRange.from);
     const [dateTo, setDateTo] = useState(initialRange.to);
-    const [customSelectingStart, setCustomSelectingStart] = useState(null);
+    const [rangeStart, setRangeStart] = useState(
+        initialRange.from ? new Date(`${initialRange.from}T00:00:00`) : null
+    );
+    const [rangeEnd, setRangeEnd] = useState(
+        initialRange.to ? new Date(`${initialRange.to}T00:00:00`) : null
+    );
     const [perPage, setPerPage] = useState(20);
     const [page, setPage] = useState(1);
 
@@ -369,7 +374,6 @@ export default function AuditTrailPage() {
     // Handle Period Type change
     const handlePeriodTypeChange = (newType) => {
         setPeriodType(newType);
-        setCustomSelectingStart(null);
         setPage(1);
         const now = new Date();
 
@@ -377,22 +381,32 @@ export default function AuditTrailPage() {
             const range = getMonthRange(now.getFullYear(), now.getMonth());
             setDateFrom(range.from);
             setDateTo(range.to);
+            setRangeStart(new Date(`${range.from}T00:00:00`));
+            setRangeEnd(new Date(`${range.to}T00:00:00`));
         } else if (newType === "previous_month") {
             const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
             const range = getMonthRange(prev.getFullYear(), prev.getMonth());
             setDateFrom(range.from);
             setDateTo(range.to);
+            setRangeStart(new Date(`${range.from}T00:00:00`));
+            setRangeEnd(new Date(`${range.to}T00:00:00`));
         } else if (newType === "select_month") {
             const [yStr, mStr] = selectedMonthKey.split("-");
             const range = getMonthRange(parseInt(yStr, 10), parseInt(mStr, 10) - 1);
             setDateFrom(range.from);
             setDateTo(range.to);
+            setRangeStart(new Date(`${range.from}T00:00:00`));
+            setRangeEnd(new Date(`${range.to}T00:00:00`));
         } else if (newType === "custom_range") {
-            // Keep current dateFrom/dateTo or set to current month if empty
             if (!dateFrom || !dateTo) {
                 const range = getMonthRange(now.getFullYear(), now.getMonth());
                 setDateFrom(range.from);
                 setDateTo(range.to);
+                setRangeStart(new Date(`${range.from}T00:00:00`));
+                setRangeEnd(new Date(`${range.to}T00:00:00`));
+            } else {
+                setRangeStart(new Date(`${dateFrom}T00:00:00`));
+                setRangeEnd(new Date(`${dateTo}T00:00:00`));
             }
         }
     };
@@ -405,31 +419,40 @@ export default function AuditTrailPage() {
         const range = getMonthRange(parseInt(yStr, 10), parseInt(mStr, 10) - 1);
         setDateFrom(range.from);
         setDateTo(range.to);
+        setRangeStart(new Date(`${range.from}T00:00:00`));
+        setRangeEnd(new Date(`${range.to}T00:00:00`));
     };
 
     // Handle Custom Range selection with 2-calendar DatePicker & strict 31-day max guardrail
     const handleCustomRangeChange = (update) => {
-        if (!update) return;
-        const [start, end] = update;
+        if (!update) {
+            setRangeStart(null);
+            setRangeEnd(null);
+            return;
+        }
+        let [start, end] = update;
 
-        if (start && !end) {
-            setCustomSelectingStart(start);
-        } else if (start && end) {
-            setCustomSelectingStart(null);
+        if (start && end && end < start) {
+            const temp = start;
+            start = end;
+            end = temp;
+        }
+
+        setRangeStart(start);
+        setRangeEnd(end);
+
+        if (start && end) {
             const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+            let finalEnd = end;
             if (diffDays > 31) {
                 // Auto clamp end date to exactly 30 days from start (31 days total)
-                const clamped = new Date(start);
-                clamped.setDate(clamped.getDate() + 30);
-                setDateFrom(formatDateForApi(start));
-                setDateTo(formatDateForApi(clamped));
-            } else {
-                setDateFrom(formatDateForApi(start));
-                setDateTo(formatDateForApi(end));
+                finalEnd = new Date(start);
+                finalEnd.setDate(finalEnd.getDate() + 30);
+                setRangeEnd(finalEnd);
             }
+            setDateFrom(formatDateForApi(start));
+            setDateTo(formatDateForApi(finalEnd));
             setPage(1);
-        } else {
-            setCustomSelectingStart(null);
         }
     };
 
@@ -488,10 +511,11 @@ export default function AuditTrailPage() {
         setModuleFilter("");
         setActionFilter("");
         setPeriodType("current_month");
-        setCustomSelectingStart(null);
         const currentRange = getMonthRange(new Date().getFullYear(), new Date().getMonth());
         setDateFrom(currentRange.from);
         setDateTo(currentRange.to);
+        setRangeStart(new Date(`${currentRange.from}T00:00:00`));
+        setRangeEnd(new Date(`${currentRange.to}T00:00:00`));
         setSelectedMonthKey(
             `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`
         );
@@ -793,21 +817,31 @@ export default function AuditTrailPage() {
                                 <div className="flex flex-wrap items-center gap-2 animate-in fade-in duration-200">
                                     <DatePicker
                                         selectsRange={true}
-                                        startDate={dateFrom ? new Date(`${dateFrom}T00:00:00`) : null}
-                                        endDate={dateTo ? new Date(`${dateTo}T00:00:00`) : null}
+                                        startDate={rangeStart}
+                                        endDate={rangeEnd}
                                         onChange={handleCustomRangeChange}
                                         monthsShown={2}
                                         minDate={
-                                            customSelectingStart
-                                                ? new Date(customSelectingStart.getTime() - 30 * 24 * 60 * 60 * 1000)
+                                            rangeStart && !rangeEnd
+                                                ? new Date(rangeStart.getTime() - 30 * 24 * 60 * 60 * 1000)
                                                 : undefined
                                         }
                                         maxDate={
-                                            customSelectingStart
-                                                ? new Date(customSelectingStart.getTime() + 30 * 24 * 60 * 60 * 1000)
+                                            rangeStart && !rangeEnd
+                                                ? new Date(rangeStart.getTime() + 30 * 24 * 60 * 60 * 1000)
                                                 : undefined
                                         }
-                                        onCalendarClose={() => setCustomSelectingStart(null)}
+                                        onCalendarClose={() => {
+                                            if (rangeStart && !rangeEnd) {
+                                                if (dateFrom && dateTo) {
+                                                    setRangeStart(new Date(`${dateFrom}T00:00:00`));
+                                                    setRangeEnd(new Date(`${dateTo}T00:00:00`));
+                                                } else {
+                                                    setRangeStart(null);
+                                                    setRangeEnd(null);
+                                                }
+                                            }
+                                        }}
                                         dateFormat="d MMM yyyy"
                                         popperPlacement="bottom-start"
                                         customInput={<CustomDateRangeInput />}
