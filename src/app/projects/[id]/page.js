@@ -50,6 +50,7 @@ export default function ProjectPage() {
   const [showReportModal, setShowReportModal] = useState(false);
   const [deletingProject, setDeletingProject] = useState(false);
   const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState(false);
+  const [deleteProjectError, setDeleteProjectError] = useState("");
 
   // Finding to delete
   const [findingToDelete, setFindingToDelete] = useState(null);
@@ -102,13 +103,16 @@ export default function ProjectPage() {
   const executeDeleteProject = async () => {
     try {
       setDeletingProject(true);
+      setDeleteProjectError("");
       await api.delete(`/projects/${project.id}`);
       setShowDeleteProjectConfirm(false);
       toast.success(`Project "${project.project_name}" has been deleted.`);
       router.push("/projects");
     } catch (err) {
       console.error(err);
-      toast.error(err.response?.data?.message || "Failed to delete project.");
+      const msg = err.response?.data?.message || "Failed to delete project.";
+      setDeleteProjectError(msg);
+      toast.error(msg, "Action Blocked");
     } finally {
       setDeletingProject(false);
     }
@@ -623,18 +627,41 @@ export default function ProjectPage() {
         </div>
       )}
 
-      {/* CONFIRMATION: DELETE PROJECT */}
-      <ConfirmDialog
-        isOpen={showDeleteProjectConfirm}
-        onClose={() => setShowDeleteProjectConfirm(false)}
-        onConfirm={executeDeleteProject}
-        title="Delete Audit Project"
-        message={`Are you sure you want to delete project "${project.project_name}"? All associated findings, action plans, and audit history will be permanently deleted.`}
-        confirmText="Delete Project"
-        cancelText="Cancel"
-        variant="danger"
-        loading={deletingProject}
-      />
+      {/* CONFIRMATION / BLOCKED: DELETE PROJECT */}
+      {findings.length > 0 ? (
+        <ConfirmDialog
+          isOpen={showDeleteProjectConfirm}
+          onClose={() => {
+            setShowDeleteProjectConfirm(false);
+            setDeleteProjectError("");
+          }}
+          onConfirm={() => {
+            setShowDeleteProjectConfirm(false);
+            setDeleteProjectError("");
+          }}
+          title="Cannot Delete Project"
+          message={`Project "${project.project_name}" cannot be deleted because it currently contains ${findings.length} registered audit finding(s). You must delete all findings before deleting this project.`}
+          confirmText="Understood"
+          variant="warning"
+          showCancel={false}
+        />
+      ) : (
+        <ConfirmDialog
+          isOpen={showDeleteProjectConfirm}
+          onClose={() => {
+            setShowDeleteProjectConfirm(false);
+            setDeleteProjectError("");
+          }}
+          onConfirm={executeDeleteProject}
+          title="Delete Audit Project"
+          message={`Are you sure you want to delete project "${project.project_name}"? All associated audit history will be permanently deleted.`}
+          confirmText="Delete Project"
+          cancelText="Cancel"
+          variant="danger"
+          loading={deletingProject}
+          error={deleteProjectError}
+        />
+      )}
 
       {/* CONFIRMATION: DELETE FINDING */}
       <ConfirmDialog

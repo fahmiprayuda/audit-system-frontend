@@ -35,6 +35,7 @@ export default function ProjectsPage() {
     const [editingProject, setEditingProject] = useState(null);
     const [projectToDelete, setProjectToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState("");
 
     // ================= FETCH =================
     const fetchProjects = async (page = 1) => {
@@ -112,6 +113,7 @@ export default function ProjectsPage() {
     const executeDeleteProject = async () => {
         if (!projectToDelete) return;
         setDeleting(true);
+        setDeleteError("");
         try {
             await api.delete(`/projects/${projectToDelete.id}`);
             setProjects(prev => prev.filter(p => p.id !== projectToDelete.id));
@@ -119,7 +121,9 @@ export default function ProjectsPage() {
             setProjectToDelete(null);
         } catch (err) {
             console.error(err);
-            toast.error(err.response?.data?.message || "Cannot delete project.");
+            const msg = err.response?.data?.message || "Cannot delete project.";
+            setDeleteError(msg);
+            toast.error(msg, "Action Blocked");
         } finally {
             setDeleting(false);
         }
@@ -284,9 +288,20 @@ export default function ProjectsPage() {
                                                     </button>
                                                     <button
                                                         type="button"
-                                                        onClick={() => setProjectToDelete(project)}
-                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                                                        title="Delete Project"
+                                                        onClick={() => {
+                                                            setDeleteError("");
+                                                            setProjectToDelete(project);
+                                                        }}
+                                                        className={`p-1.5 rounded-lg transition cursor-pointer ${
+                                                            (project.findings_count || 0) > 0
+                                                                ? "text-slate-400 hover:text-amber-600 hover:bg-amber-50"
+                                                                : "text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                                                        }`}
+                                                        title={
+                                                            (project.findings_count || 0) > 0
+                                                                ? `Project has ${project.findings_count} finding(s) (cannot be deleted)`
+                                                                : "Delete Project"
+                                                        }
                                                     >
                                                         <Trash2 size={15} />
                                                     </button>
@@ -480,18 +495,41 @@ export default function ProjectsPage() {
                     </div>
                 )}
 
-                {/* MODERN CONFIRMATION DIALOG: DELETE PROJECT */}
-                <ConfirmDialog
-                    isOpen={Boolean(projectToDelete)}
-                    onClose={() => setProjectToDelete(null)}
-                    onConfirm={executeDeleteProject}
-                    title="Delete Audit Project"
-                    message={`Are you sure you want to delete project "${projectToDelete?.project_name}"? All associated findings, action plans, and audit trails will be permanently removed.`}
-                    confirmText="Delete Project"
-                    cancelText="Cancel"
-                    variant="danger"
-                    loading={deleting}
-                />
+                {/* MODERN CONFIRMATION / BLOCKED DIALOG: DELETE PROJECT */}
+                {projectToDelete && (projectToDelete.findings_count || 0) > 0 ? (
+                    <ConfirmDialog
+                        isOpen={Boolean(projectToDelete)}
+                        onClose={() => {
+                            setProjectToDelete(null);
+                            setDeleteError("");
+                        }}
+                        onConfirm={() => {
+                            setProjectToDelete(null);
+                            setDeleteError("");
+                        }}
+                        title="Cannot Delete Project"
+                        message={`Project "${projectToDelete.project_name}" cannot be deleted because it currently contains ${projectToDelete.findings_count} audit finding(s). You must resolve or delete all associated findings and action plans before this project can be removed.`}
+                        confirmText="Understood"
+                        variant="warning"
+                        showCancel={false}
+                    />
+                ) : (
+                    <ConfirmDialog
+                        isOpen={Boolean(projectToDelete)}
+                        onClose={() => {
+                            setProjectToDelete(null);
+                            setDeleteError("");
+                        }}
+                        onConfirm={executeDeleteProject}
+                        title="Delete Audit Project"
+                        message={`Are you sure you want to delete project "${projectToDelete?.project_name}"? All associated audit trails will be permanently removed.`}
+                        confirmText="Delete Project"
+                        cancelText="Cancel"
+                        variant="danger"
+                        loading={deleting}
+                        error={deleteError}
+                    />
+                )}
             </div>
         </div>
     );
