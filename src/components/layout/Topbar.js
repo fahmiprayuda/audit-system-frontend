@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { createPortal } from "react-dom";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 import {
   usePathname,
@@ -43,6 +44,8 @@ export default function Topbar() {
         : ""
     );
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
   const [profile, setProfile] =
@@ -206,6 +209,7 @@ export default function Topbar() {
 
   const logout = async () => {
     try {
+      setLoggingOut(true);
       await api.post("/logout");
     } catch (e) {
       // Ignore network error on logout
@@ -216,6 +220,8 @@ export default function Topbar() {
         "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       document.cookie =
         "role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      setLoggingOut(false);
+      setShowLogoutConfirm(false);
       router.push("/login");
     }
   };
@@ -332,8 +338,11 @@ export default function Topbar() {
 
                 <div className="pt-1">
                   <button
-                    onClick={logout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 transition"
+                    onClick={() => {
+                      setOpen(false);
+                      setShowLogoutConfirm(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 transition cursor-pointer"
                   >
                     <LogOut size={14} />
                     <span>Sign Out</span>
@@ -607,6 +616,19 @@ export default function Topbar() {
         </div>,
         document.body
       )}
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={logout}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin keluar dari sistem? Sesi Anda saat ini akan diakhiri dan Anda perlu login kembali untuk mengakses data audit."
+        confirmText="Ya, Keluar"
+        cancelText="Batal"
+        variant="logout"
+        loading={loggingOut}
+      />
     </>
   );
 }

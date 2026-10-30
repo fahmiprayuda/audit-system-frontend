@@ -2,21 +2,61 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import api from "@/lib/axios";
 
 import StatusBadge from "@/components/badges/StatusBadge";
+import RiskBadge from "@/components/badges/RiskBadge";
+import TableSkeleton from "@/components/ui/TableSkeleton";
+import ProjectDetailSkeleton from "@/components/ui/ProjectDetailSkeleton";
+import EmptyState from "@/components/ui/EmptyState";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import AuditReportModal from "@/components/report/AuditReportModal";
 import DatePicker from "react-datepicker";
-
 import "react-datepicker/dist/react-datepicker.css";
 
 import useActionPlan from "@/hooks/useActionPlan";
 import useProjectDetail from "@/hooks/useProjectDetail";
+import { formatDate } from "@/utils/date";
+
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Edit3,
+  Printer,
+  Calendar,
+  Building2,
+  UserCheck,
+  FolderKanban,
+  AlertCircle,
+  ListTodo,
+  CheckCircle2,
+  Clock,
+  ShieldAlert,
+  X,
+  Loader2,
+  ExternalLink,
+} from "lucide-react";
 
 export default function ProjectPage() {
   const { id } = useParams();
   const router = useRouter();
 
+  // Modals & Dialogs state
   const [showModal, setShowModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(false);
+  const [showDeleteProjectConfirm, setShowDeleteProjectConfirm] = useState(false);
+
+  // Finding to delete
+  const [findingToDelete, setFindingToDelete] = useState(null);
+  const [deletingFinding, setDeletingFinding] = useState(false);
+
+  // Form submission state
+  const [submittingAP, setSubmittingAP] = useState(false);
+  const [apErrorMessage, setApErrorMessage] = useState("");
+
   const { handleCreatePlan } = useActionPlan();
 
   const [form, setForm] = useState({
@@ -24,7 +64,7 @@ export default function ProjectPage() {
     department_id: "",
     root_cause: "",
     corrective_action: "",
-    due_date: null
+    due_date: null,
   });
 
   const {
@@ -35,56 +75,85 @@ export default function ProjectPage() {
     deleteDepartment,
   } = useProjectDetail(id);
 
-
   if (loading) {
-    return <p className="p-10">Loading...</p>;
+    return <ProjectDetailSkeleton />;
   }
 
-  const project = data.project;
-  const findings = data.findings || [];
+  const project = data?.project;
+  if (!project) {
+    return (
+      <div className="min-h-screen bg-slate-50/60 p-8 flex items-center justify-center">
+        <EmptyState
+          icon={FolderKanban}
+          title="Project Not Found"
+          description="Proyek audit yang Anda cari tidak ditemukan atau telah dihapus."
+          actionLabel="Kembali ke Daftar Project"
+          onAction={() => router.push("/projects")}
+        />
+      </div>
+    );
+  }
 
-  // ================= DELETE =================
-  const deleteProject = async () => {
-    if (!confirm("Delete this project?")) return;
+  const findings = data?.findings || [];
 
+  // ================= DELETE PROJECT =================
+  const executeDeleteProject = async () => {
     try {
+      setDeletingProject(true);
       await api.delete(`/projects/${project.id}`);
+      setShowDeleteProjectConfirm(false);
       router.push("/projects");
     } catch (err) {
-      alert(err.response?.data?.message || "Cannot delete project");
+      alert(err.response?.data?.message || "Gagal menghapus project");
+    } finally {
+      setDeletingProject(false);
     }
   };
 
-  // ================= SUBMIT AP =================
+  // ================= DELETE FINDING =================
+  const executeDeleteFinding = async () => {
+    if (!findingToDelete) return;
+    try {
+      setDeletingFinding(true);
+      await api.delete(`/findings/${findingToDelete.id}`);
+      setFindingToDelete(null);
+      await fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal menghapus temuan");
+    } finally {
+      setDeletingFinding(false);
+    }
+  };
+
+  // ================= SUBMIT ACTION PLAN =================
   const submitAP = async () => {
+    setApErrorMessage("");
 
     if (!form.finding_id || !form.department_id) {
-      return alert("Finding & Department wajib diisi");
+      setApErrorMessage("Finding & Department wajib dipilih");
+      return;
+    }
+    if (!form.corrective_action.trim()) {
+      setApErrorMessage("Corrective Action wajib diisi");
+      return;
     }
 
     try {
-
+      setSubmittingAP(true);
       let fdId;
 
-      const finding = findings.find(
-        f => f.id == form.finding_id
-      );
-
+      const finding = findings.find((f) => f.id == form.finding_id);
       const existing = finding?.departments?.find(
-        d => d.department_id == form.department_id
+        (d) => d.department_id == form.department_id
       );
 
       if (existing) {
-
         fdId = existing.finding_department_id;
-
       } else {
-
         const fd = await api.post("/finding-departments", {
           finding_id: form.finding_id,
-          department_id: form.department_id
+          department_id: form.department_id,
         });
-
         fdId = fd.data.id;
       }
 
@@ -97,302 +166,510 @@ export default function ProjectPage() {
 
       if (!success) return;
 
-      alert("Action Plan berhasil dibuat !! 🔥");
-
       await fetchData();
-
       setShowModal(false);
-
       setForm({
         finding_id: "",
         department_id: "",
         root_cause: "",
         corrective_action: "",
-        due_date: null
+        due_date: null,
       });
-
     } catch (err) {
-
       console.error(err);
-
-      alert("Failed create AP");
-    }
-  };
-
-  const deleteFinding = async (id) => {
-    const ok = confirm(
-      "Delete this finding?"
-    );
-
-    if (!ok) return;
-
-    try {
-      await api.delete(`/findings/${id}`);
-      await fetchData();
-      alert("Finding deleted 🔥");
-    } catch (err) {
-      alert(err.response?.data?.message || "Delete failed");
+      setApErrorMessage(err.response?.data?.message || "Gagal membuat Action Plan");
+    } finally {
+      setSubmittingAP(false);
     }
   };
 
   // ================= SUMMARY =================
-  const allDepartments = findings.flatMap(f => f.departments || []);
-  const allAP = allDepartments.flatMap(d => d.action_plans || []);
+  const allDepartments = findings.flatMap((f) => f.departments || []);
+  const allAP = allDepartments.flatMap((d) => d.action_plans || []);
 
   const summary = {
     findings: findings.length,
-    departments: allDepartments.length,
+    departments: new Set(allDepartments.map((d) => d.department_id)).size,
     actionPlans: allAP.length,
-    need_further_review: allAP.filter(a => a.status === "need_further_review").length,
-    submitted: allAP.filter(a => a.status === "submitted").length,
-    closed: allAP.filter(a => a.status === "closed").length,
+    in_review: allAP.filter(
+      (a) => a.status === "need_further_review" || a.status === "submitted"
+    ).length,
+    closed: allAP.filter((a) => a.status === "closed").length,
   };
 
+  const companyName = project.company?.name || "Internal Division";
+  const leadAuditorName = project.creator?.name || project.lead_auditor || "Audit Head";
+
   return (
-    <div className="p-10 bg-gray-100 min-h-screen">
+    <div className="min-h-screen bg-slate-50/60 p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* BACK BUTTON */}
+        <div>
+          <button
+            type="button"
+            onClick={() => router.push("/projects")}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Kembali ke Projects</span>
+          </button>
+        </div>
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">
-          {project.project_name}
-        </h1>
+        {/* HERO PROJECT HEADER CARD */}
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/80 shadow-xs space-y-6">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
+            <div className="space-y-3 max-w-3xl">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-mono font-bold bg-sky-50 text-sky-800 border border-sky-200/80">
+                  <FolderKanban className="w-3.5 h-3.5 text-sky-600" />
+                  <span>{project.project_code || "AUD-PROJECT"}</span>
+                </span>
 
-        <button
-          onClick={deleteProject}
-          className="bg-red-600 text-white px-4 py-2 rounded"
-        >
-          Delete Project
-        </button>
-      </div>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                  <Building2 className="w-3 h-3 text-slate-400" />
+                  <span>{companyName}</span>
+                </span>
 
-      {/* ACTION BAR */}
-      <div className="flex gap-3 mb-6">
-        <button onClick={() => router.back()} className="bg-yellow-400 px-4 py-2 rounded">
-          ← Back
-        </button>
+                <span className="inline-flex items-center px-2.5 py-1 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/70 capitalize">
+                  {project.audit_type || "General Audit"}
+                </span>
+              </div>
 
-        <button
-          onClick={() => router.push(`/projects/${id}/findings/create`)}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          + Finding
-        </button>
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-900">
+                {project.project_name}
+              </h1>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded"
-        >
-          + Action Plan
-        </button>
-      </div>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 pt-1">
+                <div className="flex items-center gap-1.5">
+                  <UserCheck className="w-4 h-4 text-slate-400" />
+                  <span>
+                    Lead Auditor: <strong className="text-slate-700">{leadAuditorName}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-slate-400" />
+                  <span>
+                    Release Date: <strong className="text-slate-700">{formatDate(project.release_date)}</strong>
+                  </span>
+                </div>
+              </div>
+            </div>
 
-      {/* SUMMARY */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-8">
-        <Card title="Findings" value={summary.findings} />
-        <Card title="Departments" value={summary.departments} />
-        <Card title="AP" value={summary.actionPlans} />
-        <Card title="NFR" value={summary.need_further_review} />
-        <Card title="Closed" value={summary.closed} />
-      </div>
-
-      {/* TABLE */}
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="w-full text-left">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              <th className="p-4">Code</th>
-              <th className="p-4">Finding</th>
-              <th className="p-4">Department</th>
-              <th className="p-4">Risk</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {findings.flatMap(finding => {
-
-              const depts = finding.departments?.length
-                ? finding.departments
-                : [{ dummy: true }];
-
-              return depts.map((dept, idx) => {
-
-                const fdId = dept.finding_department_id;
-
-                return (
-                  <tr
-                    key={`${finding.id}-${fdId || idx}`}
-                    onClick={() =>
-                      fdId
-                        ? router.push(`/findings/${finding.id}?fd=${fdId}`)
-                        : router.push(`/findings/${finding.id}`)
-                    }
-                    className="border-b hover:bg-gray-50 cursor-pointer"
-                  >
-                    <td className="p-4">{finding.finding_code}</td>
-                    <td className="p-4 font-medium">{finding.title}</td>
-                    <td className="p-4">{dept.name || "-"}</td>
-                    <td className="p-4">{finding.risk_rating}</td>
-
-                    <td className="p-4">
-                      <StatusBadge status={finding.status} />
-                    </td>
-
-                    <td className="p-4 flex gap-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/findings/${finding.id}/edit`);
-                        }}
-                        className="text-blue-600 text-sm"
-                      >
-                        ✏ Edit
-                      </button>
-
-                    </td>
-
-                  </tr>
-                );
-              });
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* MODAL */}
-      {showModal && (
-        <div
-          onClick={() => setShowModal(false)}
-          className="fixed inset-0 bg-black/40 flex justify-center items-center">
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="bg-white p-6 rounded-xl w-[500px] space-y-4">
-
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Add Action Plan</h2>
+            {/* ACTION BUTTONS */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => setShowReportModal(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-2xs transition cursor-pointer"
+                title="Cetak atau unduh formal audit report (PDF)"
+              >
+                <Printer className="w-4 h-4 text-slate-500" />
+                <span>Cetak / PDF Report</span>
+              </button>
 
               <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-black text-xl"
+                type="button"
+                onClick={() => setShowModal(true)}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-2xs transition cursor-pointer"
               >
-                ✕
+                <Plus className="w-4 h-4 text-slate-500" />
+                <span>+ Action Plan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/projects/${id}/findings/create`)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-xs transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Finding</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowDeleteProjectConfirm(true)}
+                className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-xl transition cursor-pointer"
+                title="Hapus Project"
+              >
+                <Trash2 className="w-4 h-4" />
               </button>
             </div>
+          </div>
+        </div>
 
+        {/* METRICS & SUMMARY CARDS */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+          <StatCard
+            title="Total Findings"
+            value={summary.findings}
+            icon={AlertCircle}
+            color="text-slate-900"
+            bgColor="bg-slate-50"
+          />
+          <StatCard
+            title="Departments"
+            value={summary.departments}
+            icon={Building2}
+            color="text-sky-700"
+            bgColor="bg-sky-50"
+          />
+          <StatCard
+            title="Action Plans"
+            value={summary.actionPlans}
+            icon={ListTodo}
+            color="text-purple-700"
+            bgColor="bg-purple-50"
+          />
+          <StatCard
+            title="In Review (NFR)"
+            value={summary.in_review}
+            icon={Clock}
+            color="text-amber-700"
+            bgColor="bg-amber-50"
+          />
+          <StatCard
+            title="Closed Plans"
+            value={summary.closed}
+            icon={CheckCircle2}
+            color="text-emerald-700"
+            bgColor="bg-emerald-50"
+          />
+        </div>
 
-            <select
-              value={form.finding_id}
-              onChange={(e) => setForm({ ...form, finding_id: e.target.value })}
-              className="w-full border p-2 rounded"
+        {/* FINDINGS TABLE CARD */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+                Project Findings & Action Plans
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                {findings.length} Temuan
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push(`/projects/${id}/findings/create`)}
+              className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
             >
-              <option value="">Select Finding</option>
-              {findings.map(f => (
-                <option key={f.id} value={f.id}>
-                  {f.finding_code} - {f.title}
-                </option>
-              ))}
-            </select>
+              <span>+ Buat Temuan Baru</span>
+            </button>
+          </div>
 
-            <select
-              value={form.department_id}
-              onChange={(e) => setForm({ ...form, department_id: e.target.value })}
-              className="w-full border p-2 rounded"
-            >
-              <option value="">Select Department</option>
-              {departments.map(d => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
-
-            <label className="mt-6 block text-sm font-medium">
-              Root Cause <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              placeholder="Root Cause"
-              value={form.root_cause}
-              onChange={(e) => setForm({ ...form, root_cause: e.target.value })}
-              className="w-full border p-2 rounded"
-            />
-            <label className="block text-sm font-medium">
-              Corrective Action <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              placeholder="Corrective Action"
-              value={form.corrective_action}
-              onChange={(e) => setForm({ ...form, corrective_action: e.target.value })}
-              className="w-full border p-2 rounded"
-            />
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Due Date
-              </label>
-
-              <DatePicker
-                selected={form.due_date}
-                onChange={(date) =>
-                  setForm(prev => ({
-                    ...prev,
-                    due_date: date
-                  }))
-                }
-                dateFormat="dd MMM yyyy"
-                placeholderText="Select due date"
-                wrapperClassName="w-full"
-                className="w-full border border-slate-300 px-4 py-3 rounded-xl"
+          {findings.length === 0 ? (
+            <div className="p-10">
+              <EmptyState
+                icon={AlertCircle}
+                title="Belum ada temuan audit"
+                description="Proyek ini belum memiliki temuan. Buat temuan pertama untuk mendaftarkan departemen dan action plan tindak lanjut."
+                actionLabel="+ Buat Temuan Pertama"
+                onAction={() => router.push(`/projects/${id}/findings/create`)}
               />
             </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3.5 px-4 w-32">Code</th>
+                    <th className="py-3.5 px-4 min-w-[240px]">Finding Title</th>
+                    <th className="py-3.5 px-4">Department (PIC)</th>
+                    <th className="py-3.5 px-4">Risk Rating</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {findings.flatMap((finding) => {
+                    const depts = finding.departments?.length
+                      ? finding.departments
+                      : [{ dummy: true }];
 
-            <div className="flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)}>Cancel</button>
-              <button onClick={submitAP} className="bg-blue-600 text-white px-4 py-2 rounded">
-                Save
+                    return depts.map((dept, idx) => {
+                      const fdId = dept.finding_department_id;
+
+                      return (
+                        <tr
+                          key={`${finding.id}-${fdId || idx}`}
+                          onClick={() =>
+                            fdId
+                              ? router.push(`/findings/${finding.id}?fd=${fdId}`)
+                              : router.push(`/findings/${finding.id}`)
+                          }
+                          className="hover:bg-slate-50/80 transition cursor-pointer group"
+                        >
+                          {/* Code */}
+                          <td className="py-3.5 px-4 font-mono font-bold text-slate-800">
+                            <span className="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200/80 text-[11px]">
+                              {finding.finding_code}
+                            </span>
+                          </td>
+
+                          {/* Title */}
+                          <td className="py-3.5 px-4">
+                            <div className="font-semibold text-slate-900 group-hover:text-blue-600 transition">
+                              {finding.title}
+                            </div>
+                            {finding.description && (
+                              <div className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                                {finding.description}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Department */}
+                          <td className="py-3.5 px-4">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
+                              <Building2 className="w-3 h-3 text-slate-400" />
+                              <span>{dept.name || "Semua Departemen"}</span>
+                            </span>
+                          </td>
+
+                          {/* Risk */}
+                          <td className="py-3.5 px-4">
+                            <RiskBadge risk={finding.risk_rating} />
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3.5 px-4">
+                            <StatusBadge status={finding.status} />
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => router.push(`/findings/${finding.id}/edit`)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                                title="Edit Finding"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setFindingToDelete(finding)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                                title="Hapus Finding"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ADD ACTION PLAN MODAL */}
+      {showModal && (
+        <div
+          onClick={() => {
+            if (!submittingAP) setShowModal(false);
+          }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-100 bg-slate-50/70">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                  <ListTodo className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Add Action Plan</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Tambahkan rencana tindak lanjut perbaikan temuan
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                disabled={submittingAP}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
 
+            {/* Modal Body */}
+            <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+              {apErrorMessage && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                  {apErrorMessage}
+                </div>
+              )}
+
+              {/* Finding Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 block">
+                  Target Finding <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={form.finding_id}
+                  onChange={(e) => setForm({ ...form, finding_id: e.target.value })}
+                  className="w-full px-3.5 py-2.5 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
+                >
+                  <option value="">Pilih Temuan Terkait</option>
+                  {findings.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.finding_code} - {f.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Department Selector */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 block">
+                  Department (PIC) <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={form.department_id}
+                  onChange={(e) => setForm({ ...form, department_id: e.target.value })}
+                  className="w-full px-3.5 py-2.5 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
+                >
+                  <option value="">Pilih Departemen Penanggung Jawab</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Root Cause */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 block">
+                  Root Cause (Akar Masalah)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Deskripsikan penyebab mendasar terjadinya ketidaksesuaian..."
+                  value={form.root_cause}
+                  onChange={(e) => setForm({ ...form, root_cause: e.target.value })}
+                  className="w-full px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition resize-none"
+                />
+              </div>
+
+              {/* Corrective Action */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 block">
+                  Corrective Action (Tindakan Korektif) <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="Langkah spesifik yang akan dilakukan untuk mengatasi temuan..."
+                  value={form.corrective_action}
+                  onChange={(e) => setForm({ ...form, corrective_action: e.target.value })}
+                  className="w-full px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition resize-none"
+                />
+              </div>
+
+              {/* Due Date */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 block">
+                  Target Due Date (Jatuh Tempo)
+                </label>
+                <DatePicker
+                  selected={form.due_date}
+                  onChange={(date) => setForm((prev) => ({ ...prev, due_date: date }))}
+                  dateFormat="dd MMM yyyy"
+                  placeholderText="Pilih tanggal jatuh tempo perbaikan"
+                  wrapperClassName="w-full"
+                  className="w-full px-3.5 py-2 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 bg-slate-50/80 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={submittingAP}
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                disabled={submittingAP}
+                onClick={submitAP}
+                className="inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {submittingAP && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>Simpan Action Plan</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
 
+      {/* CONFIRMATION: DELETE PROJECT */}
+      <ConfirmDialog
+        isOpen={showDeleteProjectConfirm}
+        onClose={() => setShowDeleteProjectConfirm(false)}
+        onConfirm={executeDeleteProject}
+        title="Hapus Proyek Audit"
+        message={`Apakah Anda yakin ingin menghapus proyek "${project.project_name}"? Seluruh temuan, action plan, dan riwayat yang terhubung akan ikut terhapus.`}
+        confirmText="Ya, Hapus Project"
+        cancelText="Batal"
+        variant="danger"
+        loading={deletingProject}
+      />
+
+      {/* CONFIRMATION: DELETE FINDING */}
+      <ConfirmDialog
+        isOpen={Boolean(findingToDelete)}
+        onClose={() => setFindingToDelete(null)}
+        onConfirm={executeDeleteFinding}
+        title="Hapus Temuan Audit"
+        message={`Apakah Anda yakin ingin menghapus temuan "${findingToDelete?.finding_code}: ${findingToDelete?.title}"?`}
+        confirmText="Ya, Hapus Temuan"
+        cancelText="Batal"
+        variant="danger"
+        loading={deletingFinding}
+      />
+
+      {/* ONE-CLICK FORMAL AUDIT REPORT MODAL (PDF) */}
+      <AuditReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        project={project}
+        findings={findings}
+        summary={summary}
+      />
     </div>
   );
 }
 
-/* COMPONENT */
-function Card({ title, value }) {
+// Subcomponent: StatCard
+function StatCard({ title, value, icon: Icon, color, bgColor }) {
   return (
-    <div className="bg-white p-6 rounded-xl shadow">
-      <p className="text-gray-500 text-sm">{title}</p>
-      <h2 className="text-2xl font-bold">{value}</h2>
+    <div className="bg-white p-4.5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-between">
+      <div className="space-y-1">
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+          {title}
+        </span>
+        <span className="text-2xl font-extrabold text-slate-900 block tracking-tight">
+          {value}
+        </span>
+      </div>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${bgColor} ${color}`}>
+        <Icon className="w-5 h-5" />
+      </div>
     </div>
   );
-}
-
-function formatDate(date) {
-  if (!date) return "-";
-
-  // kalau string dari DB: YYYY-MM-DD
-  if (typeof date === "string") {
-    const [year, month, day] = date.split("-");
-
-    return new Date(
-      Number(year),
-      Number(month) - 1,
-      Number(day)
-    ).toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  // kalau Date object
-  return date.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
