@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import Topbar from "@/components/layout/Topbar";
 import Sidebar from "@/components/layout/Sidebar";
 import AuthGuard from "@/components/auth/AuthGuard";
+import { ToastProvider } from "@/context/ToastContext";
 
 export default function ClientLayout({
     children,
@@ -19,7 +20,7 @@ export default function ClientLayout({
         pathname === "/login";
 
     return (
-        <>
+        <ToastProvider>
             {!isLogin && (
                 <Suspense fallback={null}>
                     <Topbar />
@@ -40,6 +41,6 @@ export default function ClientLayout({
                     {children}
                 </main>
             </div>
-        </>
+        </ToastProvider>
     );
 }

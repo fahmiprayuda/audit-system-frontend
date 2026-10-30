@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import api from "@/lib/axios";
+import { useToast } from "@/context/ToastContext";
 
 export default function useUsers() {
+    const toast = useToast();
     const initialForm = {
         name: "",
         email: "",
@@ -84,10 +86,10 @@ export default function useUsers() {
             await api.post("/users", payload);
             await loadUsers();
             closeModal();
-            alert("User created successfully");
+            toast.success("User created successfully");
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.message || "Failed");
+            toast.error(err.response?.data?.message || "Failed to create user");
         };
     };
 
@@ -124,10 +126,10 @@ export default function useUsers() {
             );
             await loadUsers();
             closeModal();
-            alert("Updated");
+            toast.success("User updated successfully");
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.message || "Failed");
+            toast.error(err.response?.data?.message || "Failed to update user");
         }
     };
 
@@ -141,7 +143,7 @@ export default function useUsers() {
 
     const resetPassword = async () => {
         if (newPassword.length < 6) {
-            return alert("Password minimal 6 karakter");
+            return toast.warning("Password must be at least 6 characters");
         }
         try {
             await api.post(
@@ -151,7 +153,7 @@ export default function useUsers() {
                 }
             );
 
-            alert("Password updated");
+            toast.success("Password reset successfully");
 
             setShowResetPassword(false);
             setSelectedUser(null);
@@ -159,23 +161,24 @@ export default function useUsers() {
 
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.message || "Failed");
+            toast.error(err.response?.data?.message || "Failed to reset password");
         }
     };
 
     const deleteUser = async (id) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus user ini?")) return;
         try {
             const res = await api.delete(`/users/${id}`);
-            alert(res.data?.message || "User berhasil dihapus");
+            toast.success(res.data?.message || "User deleted successfully");
             await loadUsers();
+            return true;
         } catch (err) {
             console.error(err);
-            alert(
+            toast.error(
                 err.response?.data?.message ||
                 err.response?.data?.error ||
-                "Gagal menghapus user"
+                "Failed to delete user"
             );
+            return false;
         }
     };
 

@@ -1,69 +1,46 @@
 "use client";
 
 import api from "@/lib/axios";
-
 import { Building2, Plus } from "lucide-react";
-
 import { useState } from "react";
-
 import useCompanies from "@/app/companies/hooks/useCompanies";
-
 import DepartmentFormModal from "@/app/companies/components/DepartmentFormModal";
 import DepartmentModal from "@/app/companies/components/DepartmentModal";
 import CompanyCard from "@/app/companies/components/CompanyCard";
 import CompanyModal from "@/app/companies/components/CompanyModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/context/ToastContext";
 
 export default function CompaniesPage() {
+    const toast = useToast();
 
-    const [showModal, setShowModal] =
-        useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [showDepartments, setShowDepartments] = useState(false);
+    const [selectedCompany, setSelectedCompany] = useState(null);
 
-    const [showDelete, setShowDelete] =
-        useState(false);
-
-    const [showDepartments, setShowDepartments] =
-        useState(false);
+    const [companyToDelete, setCompanyToDelete] = useState(null);
+    const [deletingCompany, setDeletingCompany] = useState(false);
 
     const {
-
         companies,
         loading,
         fetchCompanies,
-
     } = useCompanies();
 
-    const [selectedCompany, setSelectedCompany] =
-        useState(null);
-
-    const deleteCompany = async (company) => {
-
-        if (
-            !confirm(
-                `Delete "${company.name}"?`
-            )
-        ) {
-            return;
-        }
-
+    const executeDeleteCompany = async () => {
+        if (!companyToDelete) return;
+        setDeletingCompany(true);
         try {
-
-            await api.delete(
-                `/master/companies/${company.id}`
-            );
-
+            await api.delete(`/master/companies/${companyToDelete.id}`);
+            toast.success(`Company "${companyToDelete.name}" deleted successfully.`);
             fetchCompanies();
-
+            setCompanyToDelete(null);
         } catch (err) {
-
             console.error(err);
-
-            alert(
-                err.response?.data?.message ??
-                "Failed to delete company."
-            );
-
+            toast.error(err.response?.data?.message || "Failed to delete company.");
+        } finally {
+            setDeletingCompany(false);
         }
-
     };
 
     return (
@@ -149,9 +126,8 @@ export default function CompaniesPage() {
                             setSelectedCompany(company);
                             setShowModal(true);
                         }}
-                        onDelete={deleteCompany}
+                        onDelete={(company) => setCompanyToDelete(company)}
                     />
-
                 ))}
 
             </div>
@@ -159,30 +135,34 @@ export default function CompaniesPage() {
             <CompanyModal
                 open={showModal}
                 onClose={() => {
-
                     setShowModal(false);
                     setSelectedCompany(null);
-
                 }}
                 company={selectedCompany}
                 onSuccess={fetchCompanies}
             />
 
             <DepartmentModal
-
                 open={showDepartments}
-
                 company={selectedCompany}
-
                 onClose={() => {
                     setShowDepartments(false);
                     setSelectedCompany(null);
                 }}
-
             />
 
+            {/* DELETE COMPANY CONFIRM DIALOG */}
+            <ConfirmDialog
+                isOpen={Boolean(companyToDelete)}
+                onClose={() => setCompanyToDelete(null)}
+                onConfirm={executeDeleteCompany}
+                title="Delete Company"
+                message={`Are you sure you want to delete "${companyToDelete?.name}"? All associated departments, audit projects, and records will be affected.`}
+                confirmText="Delete Company"
+                cancelText="Cancel"
+                variant="danger"
+                loading={deletingCompany}
+            />
         </div>
-
     );
-
 }

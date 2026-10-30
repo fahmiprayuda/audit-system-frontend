@@ -87,7 +87,7 @@ export default function AuditReportModal({
                   Executive Audit Report Preview
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Dokumen laporan audit formal siap cetak atau simpan sebagai PDF
+                  Formal audit report ready to print or save as PDF
                 </p>
               </div>
             </div>
@@ -97,10 +97,10 @@ export default function AuditReportModal({
                 type="button"
                 onClick={handlePrint}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-xs cursor-pointer"
-                title="Cetak atau Simpan sebagai PDF (Ctrl/Cmd + P)"
+                title="Print or Save as PDF (Ctrl/Cmd + P)"
               >
                 <Printer className="w-3.5 h-3.5" />
-                <span>Cetak / Simpan PDF</span>
+                <span>Print / Save PDF</span>
               </button>
               <button
                 type="button"
@@ -189,13 +189,13 @@ export default function AuditReportModal({
                   <span>I. Executive Summary & Metrics</span>
                 </h2>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Laporan ini menyajikan hasil evaluasi audit independen serta status tindak lanjut temuan
-                  terhadap pengendalian internal, kepatuhan prosedur operasional, dan mitigasi risiko unit kerja.
+                  This report summarizes independent audit evaluations, internal control assessments,
+                  compliance verification, and remediation action plan progress for the audited business units.
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase block">Total Temuan</span>
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase block">Total Findings</span>
                     <span className="text-xl font-bold text-slate-900 mt-0.5 block">{totalFindings}</span>
                   </div>
                   <div className="p-3 bg-rose-50/70 rounded-xl border border-rose-200/70 text-center">
@@ -221,21 +221,21 @@ export default function AuditReportModal({
               <div className="space-y-3">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  <span>II. Detail Temuan & Rencana Tindak Lanjut</span>
+                  <span>II. Findings & Remediation Action Plans</span>
                 </h2>
 
                 {findings.length === 0 ? (
                   <div className="p-6 text-center text-xs text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                    Tidak ada temuan yang tercatat pada proyek audit ini.
+                    No findings recorded for this audit engagement.
                   </div>
                 ) : (
                   <div className="overflow-hidden border border-slate-200 rounded-xl">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         <tr>
-                          <th className="py-2.5 px-3 w-28">Kode Temuan</th>
-                          <th className="py-2.5 px-3">Judul Temuan & Departemen</th>
-                          <th className="py-2.5 px-3 w-20 text-center">Risiko</th>
+                          <th className="py-2.5 px-3 w-28">Finding Code</th>
+                          <th className="py-2.5 px-3">Title & PIC Department</th>
+                          <th className="py-2.5 px-3 w-20 text-center">Risk</th>
                           <th className="py-2.5 px-3 w-24 text-center">Status</th>
                         </tr>
                       </thead>
@@ -289,12 +289,12 @@ export default function AuditReportModal({
               {/* Sign-off / Approval Block */}
               <div className="pt-8 border-t border-slate-200 page-break space-y-4">
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                  III. Lembar Pengesahan Laporan (Sign-Off)
+                  III. Formal Sign-Off & Approval
                 </h2>
                 <div className="grid grid-cols-3 gap-6 pt-4 text-center text-xs">
                   <div className="space-y-16">
                     <span className="text-[11px] font-semibold text-slate-500 uppercase block">
-                      Disiapkan Oleh:
+                      Prepared By:
                     </span>
                     <div className="border-t border-slate-300 pt-1.5">
                       <span className="font-bold text-slate-900 block">{leadAuditorName}</span>
@@ -304,17 +304,17 @@ export default function AuditReportModal({
 
                   <div className="space-y-16">
                     <span className="text-[11px] font-semibold text-slate-500 uppercase block">
-                      Diketahui Oleh:
+                      Acknowledged By:
                     </span>
                     <div className="border-t border-slate-300 pt-1.5">
                       <span className="font-bold text-slate-900 block">Auditee Dept. Head</span>
-                      <span className="text-[10px] text-slate-500 block">PIC Operasional</span>
+                      <span className="text-[10px] text-slate-500 block">Operational PIC</span>
                     </div>
                   </div>
 
                   <div className="space-y-16">
                     <span className="text-[11px] font-semibold text-slate-500 uppercase block">
-                      Disetujui Oleh:
+                      Approved By:
                     </span>
                     <div className="border-t border-slate-300 pt-1.5">
                       <span className="font-bold text-slate-900 block">Fahmi Prayuda</span>
@@ -326,7 +326,7 @@ export default function AuditReportModal({
 
               {/* Report Footer Note */}
               <div className="pt-4 border-t border-slate-100 text-[10px] text-slate-400 text-center">
-                Dokumen ini merupakan arsip resmi Internal Audit Monitoring System. Segala informasi bersifat rahasia (Strictly Confidential).
+                This document is an official record generated by the Internal Audit Monitoring System. Strictly Confidential.
               </div>
             </div>
           </div>

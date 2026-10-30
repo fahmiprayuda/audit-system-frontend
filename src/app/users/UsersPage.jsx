@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import useUsers from "@/app/users/hooks/useUsers";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
     Search,
     X,
@@ -62,6 +63,8 @@ export default function UsersPage() {
     // Tab: "audit" | "auditee" | "all"
     const [activeTab, setActiveTab] = useState("audit");
     const [search, setSearch] = useState("");
+    const [userToDelete, setUserToDelete] = useState(null);
+    const [deletingUser, setDeletingUser] = useState(false);
 
     // Separate groups
     const auditUsers = useMemo(
@@ -276,9 +279,9 @@ export default function UsersPage() {
                                             </button>
                                             <button
                                                 type="button"
-                                                onClick={() => deleteUser(user.id)}
-                                                className="p-1.5 rounded hover:bg-slate-100 hover:text-rose-600 transition"
-                                                title="Hapus"
+                                                onClick={() => setUserToDelete(user)}
+                                                className="p-1.5 rounded hover:bg-slate-100 hover:text-rose-600 transition cursor-pointer"
+                                                title="Delete User"
                                             >
                                                 <Trash2 size={14} />
                                             </button>
@@ -392,19 +395,19 @@ export default function UsersPage() {
                                             }
                                         }}
                                     >
-                                        <option value="">Pilih Jabatan</option>
+                                        <option value="">Select Position / Title</option>
                                         {(roleLevels[form.role] || []).map((lvl) => (
                                             <option key={lvl} value={lvl}>
                                                 {lvl}
                                             </option>
                                         ))}
-                                        <option value="other">Ketik Custom...</option>
+                                        <option value="other">Custom Position...</option>
                                     </select>
 
                                     {(!((roleLevels[form.role] || []).includes(form.level)) || form.level === "") && (
                                         <input
                                             type="text"
-                                            placeholder="Ketik jabatan custom..."
+                                            placeholder="Type custom position..."
                                             value={form.level || ""}
                                             onChange={(e) => setForm({ ...form, level: e.target.value })}
                                             className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -431,7 +434,7 @@ export default function UsersPage() {
                                                 loadDepartments(company_id);
                                             }}
                                         >
-                                            <option value="">Pilih Company</option>
+                                            <option value="">Select Company</option>
                                             {companies.map(company => (
                                                 <option key={company.id} value={company.id}>
                                                     {company.name}
@@ -452,7 +455,7 @@ export default function UsersPage() {
                                                 })
                                             }
                                         >
-                                            <option value="">Pilih Department</option>
+                                            <option value="">Select Department</option>
                                             {departments.map(d => (
                                                 <option key={d.id} value={d.id}>
                                                     {d.name}
@@ -470,14 +473,14 @@ export default function UsersPage() {
                                 onClick={() => closeModal()}
                                 className="border border-slate-200 px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
                             >
-                                Batal
+                                Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={editingUser ? updateUser : createUser}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-xs font-semibold transition cursor-pointer shadow-xs"
                             >
-                                Simpan
+                                Save User
                             </button>
                         </div>
                     </div>
@@ -505,19 +508,37 @@ export default function UsersPage() {
                                 onClick={() => setShowResetPassword(false)}
                                 className="border border-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                             >
-                                Batal
+                                Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={resetPassword}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer"
                             >
-                                Simpan
+                                Save
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+
+            {/* DELETE USER CONFIRM DIALOG */}
+            <ConfirmDialog
+                isOpen={Boolean(userToDelete)}
+                onClose={() => setUserToDelete(null)}
+                onConfirm={async () => {
+                    setDeletingUser(true);
+                    await deleteUser(userToDelete.id);
+                    setDeletingUser(false);
+                    setUserToDelete(null);
+                }}
+                title="Delete User"
+                message={`Are you sure you want to delete user "${userToDelete?.name}" (${userToDelete?.email})? This action cannot be undone.`}
+                confirmText="Delete User"
+                cancelText="Cancel"
+                variant="danger"
+                loading={deletingUser}
+            />
         </div>
     );
 }

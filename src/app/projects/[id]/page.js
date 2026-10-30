@@ -12,6 +12,7 @@ import ProjectDetailSkeleton from "@/components/ui/ProjectDetailSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AuditReportModal from "@/components/report/AuditReportModal";
+import { useToast } from "@/context/ToastContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -42,6 +43,7 @@ import {
 export default function ProjectPage() {
   const { id } = useParams();
   const router = useRouter();
+  const toast = useToast();
 
   // Modals & Dialogs state
   const [showModal, setShowModal] = useState(false);
@@ -86,8 +88,8 @@ export default function ProjectPage() {
         <EmptyState
           icon={FolderKanban}
           title="Project Not Found"
-          description="Proyek audit yang Anda cari tidak ditemukan atau telah dihapus."
-          actionLabel="Kembali ke Daftar Project"
+          description="The requested audit project does not exist or has been removed."
+          actionLabel="Back to Projects"
           onAction={() => router.push("/projects")}
         />
       </div>
@@ -102,9 +104,11 @@ export default function ProjectPage() {
       setDeletingProject(true);
       await api.delete(`/projects/${project.id}`);
       setShowDeleteProjectConfirm(false);
+      toast.success(`Project "${project.project_name}" has been deleted.`);
       router.push("/projects");
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal menghapus project");
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to delete project.");
     } finally {
       setDeletingProject(false);
     }
@@ -116,10 +120,12 @@ export default function ProjectPage() {
     try {
       setDeletingFinding(true);
       await api.delete(`/findings/${findingToDelete.id}`);
+      toast.success(`Finding "${findingToDelete.finding_code}" deleted.`);
       setFindingToDelete(null);
       await fetchData();
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal menghapus temuan");
+      console.error(err);
+      toast.error(err.response?.data?.message || "Failed to delete finding.");
     } finally {
       setDeletingFinding(false);
     }
@@ -130,11 +136,11 @@ export default function ProjectPage() {
     setApErrorMessage("");
 
     if (!form.finding_id || !form.department_id) {
-      setApErrorMessage("Finding & Department wajib dipilih");
+      setApErrorMessage("Finding & Department are required.");
       return;
     }
     if (!form.corrective_action.trim()) {
-      setApErrorMessage("Corrective Action wajib diisi");
+      setApErrorMessage("Corrective action is required.");
       return;
     }
 
@@ -211,7 +217,7 @@ export default function ProjectPage() {
             className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-900 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Kembali ke Projects</span>
+            <span>Back to Projects</span>
           </button>
         </div>
 
@@ -261,10 +267,10 @@ export default function ProjectPage() {
                 type="button"
                 onClick={() => setShowReportModal(true)}
                 className="inline-flex items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl shadow-2xs transition cursor-pointer"
-                title="Cetak atau unduh formal audit report (PDF)"
+                title="Print or download formal audit report (PDF)"
               >
                 <Printer className="w-4 h-4 text-slate-500" />
-                <span>Cetak / PDF Report</span>
+                <span>Print / PDF Report</span>
               </button>
 
               <button
@@ -289,7 +295,7 @@ export default function ProjectPage() {
                 type="button"
                 onClick={() => setShowDeleteProjectConfirm(true)}
                 className="p-2.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 rounded-xl transition cursor-pointer"
-                title="Hapus Project"
+                title="Delete Project"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -344,7 +350,7 @@ export default function ProjectPage() {
                 Project Findings & Action Plans
               </h2>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                {findings.length} Temuan
+                {findings.length} Findings
               </span>
             </div>
 
@@ -353,7 +359,7 @@ export default function ProjectPage() {
               onClick={() => router.push(`/projects/${id}/findings/create`)}
               className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
             >
-              <span>+ Buat Temuan Baru</span>
+              <span>+ New Finding</span>
             </button>
           </div>
 
@@ -361,9 +367,9 @@ export default function ProjectPage() {
             <div className="p-10">
               <EmptyState
                 icon={AlertCircle}
-                title="Belum ada temuan audit"
-                description="Proyek ini belum memiliki temuan. Buat temuan pertama untuk mendaftarkan departemen dan action plan tindak lanjut."
-                actionLabel="+ Buat Temuan Pertama"
+                title="No audit findings recorded"
+                description="This project currently has no audit findings. Create your first finding to assign departments and follow-up action plans."
+                actionLabel="+ Create First Finding"
                 onAction={() => router.push(`/projects/${id}/findings/create`)}
               />
             </div>
@@ -422,7 +428,7 @@ export default function ProjectPage() {
                           <td className="py-3.5 px-4">
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-medium">
                               <Building2 className="w-3 h-3 text-slate-400" />
-                              <span>{dept.name || "Semua Departemen"}</span>
+                              <span>{dept.name || "All Departments"}</span>
                             </span>
                           </td>
 
@@ -451,7 +457,7 @@ export default function ProjectPage() {
                                 type="button"
                                 onClick={() => setFindingToDelete(finding)}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                                title="Hapus Finding"
+                                title="Delete Finding"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -489,7 +495,7 @@ export default function ProjectPage() {
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Add Action Plan</h3>
                   <p className="text-[11px] text-slate-500">
-                    Tambahkan rencana tindak lanjut perbaikan temuan
+                    Add remediation action plan follow-up for this finding
                   </p>
                 </div>
               </div>
@@ -521,7 +527,7 @@ export default function ProjectPage() {
                   onChange={(e) => setForm({ ...form, finding_id: e.target.value })}
                   className="w-full px-3.5 py-2.5 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
                 >
-                  <option value="">Pilih Temuan Terkait</option>
+                  <option value="">Select Target Finding</option>
                   {findings.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.finding_code} - {f.title}
@@ -540,7 +546,7 @@ export default function ProjectPage() {
                   onChange={(e) => setForm({ ...form, department_id: e.target.value })}
                   className="w-full px-3.5 py-2.5 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
                 >
-                  <option value="">Pilih Departemen Penanggung Jawab</option>
+                  <option value="">Select Assigned Department</option>
                   {departments.map((d) => (
                     <option key={d.id} value={d.id}>
                       {d.name}
@@ -552,11 +558,11 @@ export default function ProjectPage() {
               {/* Root Cause */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 block">
-                  Root Cause (Akar Masalah)
+                  Root Cause
                 </label>
                 <textarea
                   rows={2}
-                  placeholder="Deskripsikan penyebab mendasar terjadinya ketidaksesuaian..."
+                  placeholder="Describe the underlying root cause of the non-compliance..."
                   value={form.root_cause}
                   onChange={(e) => setForm({ ...form, root_cause: e.target.value })}
                   className="w-full px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition resize-none"
@@ -566,11 +572,11 @@ export default function ProjectPage() {
               {/* Corrective Action */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 block">
-                  Corrective Action (Tindakan Korektif) <span className="text-rose-500">*</span>
+                  Corrective Action <span className="text-rose-500">*</span>
                 </label>
                 <textarea
                   rows={3}
-                  placeholder="Langkah spesifik yang akan dilakukan untuk mengatasi temuan..."
+                  placeholder="Specific remediation steps to be taken..."
                   value={form.corrective_action}
                   onChange={(e) => setForm({ ...form, corrective_action: e.target.value })}
                   className="w-full px-3.5 py-2 text-xs text-slate-800 placeholder-slate-400 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition resize-none"
@@ -580,13 +586,13 @@ export default function ProjectPage() {
               {/* Due Date */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-slate-700 block">
-                  Target Due Date (Jatuh Tempo)
+                  Target Due Date
                 </label>
                 <DatePicker
                   selected={form.due_date}
                   onChange={(date) => setForm((prev) => ({ ...prev, due_date: date }))}
                   dateFormat="dd MMM yyyy"
-                  placeholderText="Pilih tanggal jatuh tempo perbaikan"
+                  placeholderText="Select target completion date"
                   wrapperClassName="w-full"
                   className="w-full px-3.5 py-2 text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
                 />
@@ -601,7 +607,7 @@ export default function ProjectPage() {
                 onClick={() => setShowModal(false)}
                 className="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition cursor-pointer"
               >
-                Batal
+                Cancel
               </button>
               <button
                 type="button"
@@ -610,7 +616,7 @@ export default function ProjectPage() {
                 className="inline-flex items-center gap-1.5 px-4.5 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition cursor-pointer shadow-xs disabled:opacity-50"
               >
                 {submittingAP && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Simpan Action Plan</span>
+                <span>Save Action Plan</span>
               </button>
             </div>
           </div>
@@ -622,10 +628,10 @@ export default function ProjectPage() {
         isOpen={showDeleteProjectConfirm}
         onClose={() => setShowDeleteProjectConfirm(false)}
         onConfirm={executeDeleteProject}
-        title="Hapus Proyek Audit"
-        message={`Apakah Anda yakin ingin menghapus proyek "${project.project_name}"? Seluruh temuan, action plan, dan riwayat yang terhubung akan ikut terhapus.`}
-        confirmText="Ya, Hapus Project"
-        cancelText="Batal"
+        title="Delete Audit Project"
+        message={`Are you sure you want to delete project "${project.project_name}"? All associated findings, action plans, and audit history will be permanently deleted.`}
+        confirmText="Delete Project"
+        cancelText="Cancel"
         variant="danger"
         loading={deletingProject}
       />
@@ -635,10 +641,10 @@ export default function ProjectPage() {
         isOpen={Boolean(findingToDelete)}
         onClose={() => setFindingToDelete(null)}
         onConfirm={executeDeleteFinding}
-        title="Hapus Temuan Audit"
-        message={`Apakah Anda yakin ingin menghapus temuan "${findingToDelete?.finding_code}: ${findingToDelete?.title}"?`}
-        confirmText="Ya, Hapus Temuan"
-        cancelText="Batal"
+        title="Delete Audit Finding"
+        message={`Are you sure you want to delete finding "${findingToDelete?.finding_code}: ${findingToDelete?.title}"? All associated action plans will also be permanently removed.`}
+        confirmText="Delete Finding"
+        cancelText="Cancel"
         variant="danger"
         loading={deletingFinding}
       />

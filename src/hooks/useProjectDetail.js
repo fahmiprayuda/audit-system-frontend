@@ -52,11 +52,7 @@ export default function useProjectDetail(id) {
     // ================= DELETE DEPARTMENT =================
 
     const deleteDepartment = async (fdId) => {
-
-        if (!confirm("Remove this department?")) return;
-
         try {
-
             await api.delete(`/finding-departments/${fdId}`);
 
             setData(prev => ({
@@ -68,12 +64,10 @@ export default function useProjectDetail(id) {
                     )
                 }))
             }));
-
+            return true;
         } catch (err) {
-
             console.error(err);
-
-            alert("Failed to delete");
+            return false;
         }
     };
 

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/context/ToastContext";
 
 import {
   usePathname,
@@ -35,6 +36,7 @@ export default function Topbar() {
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const toast = useToast();
 
   const currentUrl =
     pathname +
@@ -90,7 +92,7 @@ export default function Topbar() {
     );
 
     setUser(updatedUser);
-    alert("Profile updated");
+    toast.success("Profile updated successfully");
     setShowProfile(false);
   };
 
@@ -239,12 +241,10 @@ export default function Topbar() {
         "/change-password",
         passwordForm
       );
-      alert(
-        "Password changed successfully"
-      );
+      toast.success("Password changed successfully");
       setShowPassword(false);
     } catch (err) {
-      alert(
+      toast.error(
         err.response?.data?.message ||
         "Failed to change password"
       );
@@ -622,10 +622,10 @@ export default function Topbar() {
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
         onConfirm={logout}
-        title="Konfirmasi Logout"
-        message="Apakah Anda yakin ingin keluar dari sistem? Sesi Anda saat ini akan diakhiri dan Anda perlu login kembali untuk mengakses data audit."
-        confirmText="Ya, Keluar"
-        cancelText="Batal"
+        title="Sign Out Confirmation"
+        message="Are you sure you want to sign out? Your current session will end and you will need to sign back in to access audit records."
+        confirmText="Sign Out"
+        cancelText="Cancel"
         variant="logout"
         loading={loggingOut}
       />

@@ -2,53 +2,39 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/axios";
-
 import { Building2 } from "lucide-react";
-
 import DepartmentFormModal from "@/app/companies/components/DepartmentFormModal";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/context/ToastContext";
 
 export default function DepartmentModal({
     open,
     onClose,
     company,
 }) {
-
-
+    const toast = useToast();
     const [loading, setLoading] = useState(false);
     const [departments, setDepartments] = useState([]);
 
     const [showForm, setShowForm] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState(null);
+    const [deptToDelete, setDeptToDelete] = useState(null);
+    const [deletingDept, setDeletingDept] = useState(false);
 
-    const deleteDepartment = async (department) => {
-
-        if (
-            !confirm(
-                `Delete department "${department.name}"?`
-            )
-        ) {
-            return;
-        }
-
+    const executeDeleteDepartment = async () => {
+        if (!deptToDelete) return;
+        setDeletingDept(true);
         try {
-
-            await api.delete(
-                `/master/departments/${department.id}`
-            );
-
+            await api.delete(`/master/departments/${deptToDelete.id}`);
+            toast.success(`Department "${deptToDelete.name}" deleted successfully.`);
             fetchDepartments();
-
+            setDeptToDelete(null);
         } catch (err) {
-
             console.error(err);
-
-            alert(
-                err.response?.data?.message ??
-                "Failed to delete department."
-            );
-
+            toast.error(err.response?.data?.message || "Failed to delete department.");
+        } finally {
+            setDeletingDept(false);
         }
-
     };
 
     const fetchDepartments = async () => {
@@ -194,8 +180,8 @@ export default function DepartmentModal({
                                         </button>
 
                                         <button
-                                            onClick={() => deleteDepartment(dept)}
-                                            className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50"
+                                            onClick={() => setDeptToDelete(dept)}
+                                            className="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 cursor-pointer"
                                         >
                                             Delete
                                         </button>
@@ -216,7 +202,7 @@ export default function DepartmentModal({
 
                     <button
                         onClick={onClose}
-                        className="px-5 py-3 rounded-xl border hover:bg-slate-100"
+                        className="px-5 py-3 rounded-xl border hover:bg-slate-100 cursor-pointer"
                     >
                         Close
                     </button>
@@ -238,6 +224,18 @@ export default function DepartmentModal({
                 }}
             />
 
+            {/* DELETE DEPARTMENT CONFIRM DIALOG */}
+            <ConfirmDialog
+                isOpen={Boolean(deptToDelete)}
+                onClose={() => setDeptToDelete(null)}
+                onConfirm={executeDeleteDepartment}
+                title="Delete Department"
+                message={`Are you sure you want to delete department "${deptToDelete?.name}"? Action plans assigned to this department will be impacted.`}
+                confirmText="Delete Department"
+                cancelText="Cancel"
+                variant="danger"
+                loading={deletingDept}
+            />
         </div>
 
     );

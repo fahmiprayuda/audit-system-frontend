@@ -301,10 +301,10 @@ const CustomDateRangeInput = forwardRef(({ value, onClick }, ref) => (
         onClick={onClick}
         ref={ref}
         className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl shadow-2xs focus:outline-none focus:ring-2 focus:ring-slate-900/10 transition cursor-pointer"
-        title="Klik untuk membuka 2 kalender rentang tanggal"
+        title="Click to open calendar range picker"
     >
         <Calendar className="w-3.5 h-3.5 text-slate-500" />
-        <span>{value || "Pilih Rentang Tanggal"}</span>
+        <span>{value || "Select Date Range"}</span>
         <ChevronDown className="w-3 h-3 text-slate-400" />
     </button>
 ));
@@ -714,10 +714,10 @@ export default function AuditTrailPage() {
                                             }}
                                             className="w-3.5 h-3.5 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
                                         />
-                                        <span>Cari di Semua Periode</span>
+                                        <span>Search Across All Periods</span>
                                     </label>
                                     <span className="text-[11px] text-slate-400">
-                                        (abaikan batas filter bulan)
+                                        (bypasses month limit)
                                     </span>
                                 </div>
                             )}
@@ -782,7 +782,7 @@ export default function AuditTrailPage() {
                         <div className="flex flex-wrap items-center gap-2">
                             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 mr-1">
                                 <Calendar className="w-4 h-4 text-slate-400" />
-                                <span>Periode:</span>
+                                <span>Period:</span>
                             </div>
 
                             {/* Main Period Select */}
@@ -791,10 +791,10 @@ export default function AuditTrailPage() {
                                 onChange={(e) => handlePeriodTypeChange(e.target.value)}
                                 className="px-3 py-1.5 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition cursor-pointer"
                             >
-                                <option value="current_month">Bulan Ini</option>
-                                <option value="previous_month">Bulan Lalu</option>
-                                <option value="select_month">Pilih Bulan Tertentu</option>
-                                <option value="custom_range">Custom Range (Maks. 31 Hari)</option>
+                                <option value="current_month">This Month</option>
+                                <option value="previous_month">Last Month</option>
+                                <option value="select_month">Select Specific Month</option>
+                                <option value="custom_range">Custom Range (Max 31 Days)</option>
                             </select>
 
                             {/* Sub-selector: Specific Month */}
@@ -847,7 +847,7 @@ export default function AuditTrailPage() {
                                         customInput={<CustomDateRangeInput />}
                                     />
                                     <span className="text-[11px] text-slate-400 font-medium">
-                                        (Maks. 31 hari)
+                                        (Max 31 days)
                                     </span>
                                 </div>
                             )}
@@ -858,7 +858,7 @@ export default function AuditTrailPage() {
                             {allPeriodsSearch && debouncedSearch ? (
                                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
                                     <Globe className="w-3.5 h-3.5 text-blue-600" />
-                                    <span>Mode Pencarian: Semua Periode</span>
+                                    <span>Search Mode: All Periods</span>
                                 </div>
                             ) : (
                                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200/80">
